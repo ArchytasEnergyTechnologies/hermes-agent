@@ -2867,7 +2867,7 @@ def _env_payload(*, env_var: str, token: str, base_url: str) -> dict[str, Any]:
 
 
 # Region-specific endpoints inferred from the key itself.
-_ENV_SEED_PROFILE_BASE_URL = frozenset({"kimi-coding", "zai"})  # seeded rows take ProviderProfile.resolve_base_url
+_ENV_SEED_PROFILE_BASE_URL = frozenset({"kimi-coding", "zai"})  # pre-hook subset kept as is; not an extension point
 
 
 def _env_key_var_candidates(env_vars: list[str], entries: list[PooledCredential]) -> list[str]:
