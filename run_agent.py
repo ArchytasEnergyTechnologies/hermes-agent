@@ -934,6 +934,10 @@ class AIAgent(
             _quietly(self._memory_manager.release_soft)
         from agent.prepared_compaction import release_for_agent
         _quietly(release_for_agent, self)
+        # Gateway eviction and background-review forks end here, never in close(): drop the token-memo entries
+        # their turns inserted (a resumed agent recomputes; equal strings hit again by value).
+        from agent.model_metadata_token_memo import forget_message_token_memo
+        _quietly(forget_message_token_memo, None, owner=self)
 
     def close(self) -> None:
         """Release every resource this agent holds (idempotent); each phase is guarded so one failure never

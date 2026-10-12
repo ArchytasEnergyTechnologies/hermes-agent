@@ -14,8 +14,12 @@ from run_agent import AIAgent
 
 def _held() -> set[str]:
     """Long strings the memo still holds."""
+    return _held_in(list(_MSG_TOKENS_CACHE.items()))
+
+
+def _held_in(value: Any) -> set[str]:
     found: set[str] = set()
-    stack: list[Any] = [list(_MSG_TOKENS_CACHE.items())]
+    stack: list[Any] = [value]
     while stack:
         value = stack.pop()
         if isinstance(value, (list, tuple)):
@@ -146,15 +150,11 @@ def _turn_agent() -> AIAgent:
     return agent
 
 
-def test_close_evicts_the_request_only_strings_a_real_turn_estimated():
-    """The ephemeral system-prompt concat, prefill rows and the whitespace-stripped user row reach the memo
-    only through the per-call request copy; no history or cached prompt holds them, so release by value
-    alone left them until FIFO eviction."""
+def _run_marked_turn(agent: AIAgent) -> None:
     from unittest.mock import patch
 
     from tests.agent.test_run_agent import _mock_response
 
-    agent = _turn_agent()
     agent._cached_system_prompt = "a long cached per-session system prompt " * 500
     agent.ephemeral_system_prompt = "an ephemeral gateway channel prompt " * 200
     agent.prefill_messages = [{"role": "user", "content": "a prefilled example question " * 100},
@@ -163,22 +163,44 @@ def test_close_evicts_the_request_only_strings_a_real_turn_estimated():
     with (patch.object(agent, "_flush_messages_to_session_db"), patch.object(agent, "_persist_session"),
           patch.object(agent, "_save_trajectory"), patch.object(agent, "_cleanup_task_resources")):
         agent.run_conversation("a pasted log the user ended with a newline " * 100 + "\n")
-    request_only = [s for s in _held() if "ephemeral gateway" in s or "prefilled example" in s
-                    or s.startswith("a pasted log")]
-    assert len(request_only) >= 4  # concat, 2 prefill rows, stripped user row
+
+
+def _request_only() -> list[str]:
+    return [s for s in _held() if "ephemeral gateway" in s or "prefilled example" in s or "pasted log" in s]
+
+
+def test_close_evicts_the_request_only_strings_a_real_turn_estimated():
+    """The ephemeral system-prompt concat, prefill rows and the whitespace-stripped user row reach the memo
+    only through the per-call request copy; no history or cached prompt holds them, so release by value
+    alone left them until FIFO eviction."""
+    agent = _turn_agent()
+    _run_marked_turn(agent)
+    assert len(_request_only()) >= 4  # concat, 2 prefill rows, stripped user row (+ the history's copy)
 
     agent.close()
 
-    assert not [s for s in _held() if "ephemeral gateway" in s or "prefilled example" in s or "pasted log" in s]
+    assert not _request_only()
+
+
+def test_release_clients_evicts_the_turns_memo_entries():
+    """Gateway cache eviction and background-review forks end in release_clients(), never close()."""
+    agent = _turn_agent()
+    _run_marked_turn(agent)
+    agent._session_messages = []  # gateway eviction drops the history right after release_clients()
+    assert _request_only()
+
+    agent.release_clients()
+
+    assert not _request_only()
 
 
 def test_a_rebuilt_equal_string_reuses_its_memo_entry():
     """Per-request strings rebuilt with the same bytes (the ephemeral concat, a skill-split tail, a MoA
     tool-result fold) hit the existing entry instead of holding one more copy per request."""
     base = "a cached system prompt body " * 500
-    before = len(_MSG_TOKENS_CACHE)
     first = estimate_messages_tokens_rough([{"role": "system", "content": base + "\n\nephemeral"}])
     for _ in range(5):
         assert estimate_messages_tokens_rough([{"role": "system", "content": base + "\n\nephemeral"}]) == first
 
-    assert len(_MSG_TOKENS_CACHE) == before + 1
+    target = base + "\n\nephemeral"
+    assert sum(1 for key, _entry in list(_MSG_TOKENS_CACHE.items()) if target in _held_in(key)) == 1
