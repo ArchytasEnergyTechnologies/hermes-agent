@@ -199,7 +199,7 @@ def _mirror_result_onto_live_lists(agent, result, messages, *, direct_path: bool
         # Durable-parent adoption can leave `_session_messages` on the pre-adoption list.
         _sync_persisted_markers(session_messages, result_messages)
     if result_messages is not messages:
-        # The token-estimate memo pins message strings; bodies the summary replaced can never hit again,
+        # The token-estimate memo holds message strings; bodies the summary replaced can never hit again,
         # and close() only sees the compressed history.
         from agent.model_metadata_token_memo import forget_message_token_memo
         with contextlib.suppress(Exception):

@@ -954,13 +954,13 @@ class AIAgent(
         self._db_flush_scan_prefix = None
         self._streamed_assistant_text_parts = []
         if isinstance(session_messages, list):
-            # The token-estimate memo pins message strings; a closed conversation's can never hit again. The
-            # system prompt reaches the memo only through api_messages, never through the history, and a
-            # prompt-caching request splits it into the static prefix + a per-request suffix slice: the
-            # prefix's pin evicts that split entry.
+            # The token-estimate memo holds message strings; a closed conversation's can never hit again. Entries
+            # this agent's turns inserted (request-only strings: system prompt + ephemeral concat, prefill, cache
+            # split slices, MoA folds) go by owner; the history and system prompt also go by value, for entries
+            # inserted outside a turn.
             from agent.model_metadata_token_memo import forget_message_token_memo
             _quietly(forget_message_token_memo, (session_messages, getattr(self, "_cached_system_prompt", None),
-                                                 getattr(self, "_cached_system_prompt_static", None)))
+                                                 getattr(self, "_cached_system_prompt_static", None)), owner=self)
         _quietly(self._trim_process_memory)
         _quietly(self._finalize_owned_session_row)
 
