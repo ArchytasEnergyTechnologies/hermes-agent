@@ -13,7 +13,7 @@ from run_agent import AIAgent
 
 
 def _held() -> set[str]:
-    """Long strings the memo still holds (in its keys or its entries)."""
+    """Long strings the memo still holds."""
     found: set[str] = set()
     stack: list[Any] = [list(_MSG_TOKENS_CACHE.items())]
     while stack:
@@ -98,7 +98,7 @@ def test_close_evicts_the_system_prompt_the_history_never_holds():
     assert system_prompt not in _held()
 
 
-def test_compression_telemetry_does_not_pin_the_one_shot_summary_prompt():
+def test_compression_telemetry_does_not_hold_the_one_shot_summary_prompt():
     from agent.context_compressor_telemetry import CompressionTelemetryMixin
 
     recorder = CompressionTelemetryMixin()
@@ -175,10 +175,10 @@ def test_close_evicts_the_request_only_strings_a_real_turn_estimated():
 def test_a_rebuilt_equal_string_reuses_its_memo_entry():
     """Per-request strings rebuilt with the same bytes (the ephemeral concat, a skill-split tail, a MoA
     tool-result fold) hit the existing entry instead of holding one more copy per request."""
-    _MSG_TOKENS_CACHE.clear()
     base = "a cached system prompt body " * 500
+    before = len(_MSG_TOKENS_CACHE)
     first = estimate_messages_tokens_rough([{"role": "system", "content": base + "\n\nephemeral"}])
     for _ in range(5):
         assert estimate_messages_tokens_rough([{"role": "system", "content": base + "\n\nephemeral"}]) == first
 
-    assert len(_MSG_TOKENS_CACHE) == 1
+    assert len(_MSG_TOKENS_CACHE) == before + 1

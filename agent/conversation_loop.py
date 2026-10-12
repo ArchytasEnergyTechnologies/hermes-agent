@@ -1810,7 +1810,6 @@ def run_conversation(
     ``{turn_id, current_turn_user_idx}`` pair is stamped beside the exact ``messages`` it
     addresses, after every history rewrite including post-turn micro-compaction.
     """
-    from agent.model_metadata_token_memo import token_memo_owner
     from agent.turn_context import export_current_turn_boundary
     from agent.turn_finalizer import settle_held_final
     from agent.voice_turn_route import end_voice_turn_route
@@ -1819,9 +1818,8 @@ def run_conversation(
     # Steer / redirect / interrupt set this mid-turn; the result reports whether the turn ran untouched.
     agent._turn_user_intervened = False
     # Images attached natively to this user turn stay visible to vision_analyze for the turn, so
-    # it does not embed the same pixels a second time into the same request (#76411). Token-estimate
-    # memo entries this turn inserts belong to the agent, so close() releases the request-only ones.
-    with native_turn_images(user_message), token_memo_owner(agent):
+    # it does not embed the same pixels a second time into the same request (#76411).
+    with native_turn_images(user_message):
         try:
             result = _run_conversation_turn(
                 agent,

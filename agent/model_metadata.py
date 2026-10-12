@@ -2429,7 +2429,7 @@ def _strip_stale_thinking_for_estimate(messages: list[dict[str, Any]]) -> list[d
 # ``str(shadow)`` bytes ⇒ identical estimate. A str caches its hash, so the history strings every per-call
 # shallow copy shares cost O(1); a per-call string with the same bytes (a ``.strip()``ped row, the ephemeral
 # system-prompt concat, a re-rendered MoA fold) hits instead of pinning one more copy per request. Each entry
-# also records the agent whose turn inserted it (``token_memo_owner``), so close() releases request-time
+# also records the agent whose turn inserted it (``current_token_memo_owner``), so close() releases request-time
 # strings that no history holds.
 _MSG_TOKENS_CACHE: dict[Any, tuple[int, int, int | None]] = {}  # text tokens, image count, owner
 _MSG_TOKENS_CACHE_MAX = 4096
