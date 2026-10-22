@@ -97,7 +97,7 @@ class TestCopilotHook:
     DEFAULT = "https://api.githubcopilot.com"
 
     def test_exchange_endpoint_wins(self, monkeypatch):
-        import hermes_cli.copilot_auth as copilot_auth
+        from hermes_cli import copilot_auth
 
         monkeypatch.setattr(copilot_auth, "resolve_copilot_token", lambda: ("ghu_x", "env"))
         monkeypatch.setattr(copilot_auth, "get_copilot_api_token", lambda raw: ("tok", "https://api.ent.test"))
@@ -105,7 +105,7 @@ class TestCopilotHook:
         assert profile.resolve_base_url(api_key="tok", default_url=self.DEFAULT, env_url="") == "https://api.ent.test"
 
     def test_no_exchange_endpoint_keeps_env_override_and_status_skips_exchange(self, monkeypatch):
-        import hermes_cli.copilot_auth as copilot_auth
+        from hermes_cli import copilot_auth
 
         monkeypatch.setattr(copilot_auth, "resolve_copilot_token", lambda: ("ghu_x", "env"))
         monkeypatch.setattr(copilot_auth, "get_copilot_api_token", lambda raw: ("tok", None))
