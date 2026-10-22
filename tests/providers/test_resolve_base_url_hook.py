@@ -80,6 +80,54 @@ class TestZaiHook:
             assert url == "https://open.bigmodel.cn/api/paas/v4"
         assert calls == ["glm-key"]  # second call answered from the auth.json cache
 
+    @pytest.mark.parametrize("answer", [
+        {"id": "cn", "base_url": "https://open.bigmodel.cn/api/paas/v4", "model": "glm-5", "label": "China"},
+        None,
+    ])
+    @pytest.mark.parametrize("persist_fails", [False, True])
+    def test_concurrent_resolutions_of_one_key_probe_once(self, monkeypatch, answer, persist_fails):
+        """Overlapping sessions resolving the same key share one probe, success or failure."""
+        import threading
+
+        from tests.waiting import wait_until
+
+        cls = type(_profile("zai"))
+        monkeypatch.setattr(cls, "_probe_failed_until", {})
+        monkeypatch.setattr(cls, "_probe_succeeded", {})
+        if persist_fails:
+            monkeypatch.setattr("hermes_cli.auth._save_auth_store", lambda *a, **k: (_ for _ in ()).throw(OSError("ro")))
+        lookups, calls, release = [], [], threading.Event()
+        real_known = cls._known_endpoint
+
+        def counting_known(self, key_hash, default_url):
+            lookups.append(key_hash)
+            return real_known(self, key_hash, default_url)
+
+        def detect(api_key, timeout=8.0):
+            calls.append(api_key)
+            assert release.wait(timeout=10)  # hold the probe until every caller has looked up
+            return answer
+
+        monkeypatch.setattr(cls, "_known_endpoint", counting_known)
+        monkeypatch.setattr("hermes_cli.auth.detect_zai_endpoint", detect)
+        profile = _profile("zai")
+        results = []
+        threads = [threading.Thread(target=lambda: results.append(
+            profile.resolve_base_url(api_key="glm-shared", default_url=self.DEFAULT, env_url=""))) for _ in range(4)]
+        for t in threads:
+            t.start()
+        try:
+            # 4 lock-free lookups + the probing thread's re-check under the lock: all 4 are past the cache.
+            wait_until(lambda: len(lookups) >= 5 and calls, timeout=10)
+        finally:
+            release.set()
+            for t in threads:
+                t.join(timeout=10)
+        assert not any(t.is_alive() for t in threads)
+        expected = answer["base_url"] if answer else self.DEFAULT
+        assert results == [expected] * 4
+        assert calls == ["glm-shared"]
+
     def test_status_variant_never_probes(self, monkeypatch):
         monkeypatch.setattr("hermes_cli.auth.detect_zai_endpoint", lambda *a, **k: pytest.fail("probed"))
         profile = _profile("zai")

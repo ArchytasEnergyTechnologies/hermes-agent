@@ -7,6 +7,7 @@ GLM-4.5+ defaults to thinking ON, so ``reasoning_config`` is translated to
 import hashlib
 import logging
 import re
+import threading
 import time
 from typing import Any
 
@@ -55,6 +56,34 @@ class ZaiProfile(ProviderProfile):
     # retried for this long (a success persists to auth.json instead).
     _PROBE_FAILURE_TTL_SECONDS = 300
     _probe_failed_until: dict[str, float] = {}
+    # A detected endpoint that could not be persisted to auth.json is kept in-process instead, so
+    # waiters and later resolutions reuse it rather than probing again.
+    _probe_succeeded: dict[str, str] = {}
+    # One probe per key at a time: overlapping sessions resolving the same key wait for the first
+    # probe's outcome instead of each firing the four regional probes.
+    _probe_locks: dict[str, threading.Lock] = {}
+    _probe_locks_guard = threading.Lock()
+
+    @classmethod
+    def _probe_lock_for(cls, key_hash: str) -> threading.Lock:
+        with cls._probe_locks_guard:
+            return cls._probe_locks.setdefault(key_hash, threading.Lock())
+
+    def _known_endpoint(self, key_hash: str, default_url: str) -> str | None:
+        """The persisted endpoint for this key, the default while a failed probe is fresh, else None."""
+        from hermes_cli.auth import _load_auth_store, _load_provider_state
+
+        cached = (_load_provider_state(_load_auth_store(), "zai") or {}).get("detected_endpoint")
+        if isinstance(cached, dict) and cached.get("base_url") and cached.get("key_hash", "") == key_hash:
+            logger.debug("Z.AI: using cached endpoint %s", cached["base_url"])
+            return cached["base_url"]
+        if key_hash in self._probe_succeeded:
+            return self._probe_succeeded[key_hash]
+        # Only a success is persisted, so a failing key (429/401 on every endpoint) would re-run the
+        # four chat-completion probes on every credential-pool load — dozens of times per picker open.
+        if self._probe_failed_until.get(key_hash, 0.0) > time.time():
+            return default_url
+        return None
 
     def resolve_base_url(self, *, api_key: str, default_url: str, env_url: str, probe: bool = True) -> str:
         """Z.AI base URL by probing endpoints; an explicit GLM_BASE_URL always wins.
@@ -65,7 +94,6 @@ class ZaiProfile(ProviderProfile):
         """
         if not probe:
             return super().resolve_base_url(api_key=api_key, default_url=default_url, env_url=env_url, probe=False)
-        from hermes_cli.auth import _auth_store_lock, _load_auth_store, _load_provider_state, _save_auth_store, _store_provider_state, detect_zai_endpoint
         if env_url:
             return env_url
         # No key -> don't probe (N×M 401s); auxiliary-client auto-detection hits this for everyone.
@@ -73,15 +101,16 @@ class ZaiProfile(ProviderProfile):
             return default_url
 
         key_hash = hashlib.sha256(api_key.encode()).hexdigest()[:16]
-        state = _load_provider_state(_load_auth_store(), "zai") or {}
-        cached = state.get("detected_endpoint")
-        if isinstance(cached, dict) and cached.get("base_url") and cached.get("key_hash", "") == key_hash:
-            logger.debug("Z.AI: using cached endpoint %s", cached["base_url"])
-            return cached["base_url"]
-        # Only a success is persisted, so a failing key (429/401 on every endpoint) would re-run the
-        # four chat-completion probes on every credential-pool load — dozens of times per picker open.
-        if self._probe_failed_until.get(key_hash, 0.0) > time.time():
-            return default_url
+        known = self._known_endpoint(key_hash, default_url)
+        if known is not None:
+            return known
+        with self._probe_lock_for(key_hash):
+            # A caller queued behind the lock sees the first probe's outcome here.
+            known = self._known_endpoint(key_hash, default_url)
+            return known if known is not None else self._probe_and_persist(api_key, key_hash, default_url)
+
+    def _probe_and_persist(self, api_key: str, key_hash: str, default_url: str) -> str:
+        from hermes_cli.auth import _auth_store_lock, _load_auth_store, _load_provider_state, _save_auth_store, _store_provider_state, detect_zai_endpoint
 
         # Probe — may take up to ~8s per endpoint.
         detected = detect_zai_endpoint(api_key)
@@ -105,6 +134,7 @@ class ZaiProfile(ProviderProfile):
                 _store_provider_state(auth_store, "zai", state_under_lock, set_active=False)
                 _save_auth_store(auth_store)
         except Exception as exc:
+            self._probe_succeeded[key_hash] = detected["base_url"]
             logger.warning("Z.AI: could not persist detected endpoint (%s); will re-probe next start", exc, exc_info=True)
         logger.info("Z.AI: auto-detected endpoint %s (%s)", detected["label"], detected["base_url"])
         return detected["base_url"]
