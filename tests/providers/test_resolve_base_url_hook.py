@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import sys
+import textwrap
+
 import pytest
 
 from providers import get_provider_profile
@@ -34,7 +37,9 @@ class TestDefaultHook:
 
     def test_profile_without_override_uses_default(self):
         profile = _profile("gmi")
-        assert type(profile).resolve_base_url is ProviderProfile.resolve_base_url
+        for probe in (True, False):
+            assert profile.resolve_base_url(api_key="k", default_url=DEFAULT, env_url="", probe=probe) == DEFAULT
+        assert profile.resolve_base_url(api_key="k", default_url=DEFAULT, env_url="https://proxy.test/v1/") == "https://proxy.test/v1"
 
 
 class TestKimiHook:
@@ -61,9 +66,7 @@ class TestZaiHook:
     DEFAULT = "https://api.z.ai/api/paas/v4"
 
     def test_probe_detects_and_caches(self, monkeypatch):
-        from hermes_cli import auth_zai_kimi
-
-        monkeypatch.setattr(auth_zai_kimi, "_zai_probe_failed_until", {})
+        monkeypatch.setattr(type(_profile("zai")), "_probe_failed_until", {})
         calls = []
 
         def detect(api_key, timeout=8.0):
@@ -130,29 +133,85 @@ class TestActualHook:
         assert profile.resolve_base_url(api_key="", default_url=default, env_url="", probe=probe) == default
 
 
-def test_user_override_without_the_hook_keeps_bundled_routing(monkeypatch):
-    """A ``$HERMES_HOME`` plugin re-registering ``kimi-coding`` as a plain ProviderProfile keeps the
-    bundled key-prefix routing: an ``sk-kimi-`` key still reaches the Kimi Code endpoint."""
+def _rediscover():
+    """Drop cached discovery so the next lookup re-runs it against the current HERMES_HOME."""
     import providers
-    from hermes_cli.auth import PROVIDER_REGISTRY, resolve_provider_base_url
+
+    providers._REGISTRY.clear()
+    providers._ALIASES.clear()
+    providers._PROVIDER_LIST_CACHE = None
+    providers._discovered = False
+    for mod in [m for m in sys.modules if m.startswith(("plugins.model_providers", "_hermes_user_provider"))]:
+        del sys.modules[mod]
+
+
+@pytest.fixture
+def user_kimi_plugin(tmp_path, monkeypatch):
+    """Write ``$HERMES_HOME/plugins/model-providers/kimi-coding`` with the given body; discovery loads it."""
+    home = tmp_path / ".hermes"
+    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KIMI_API_KEY", "sk-kimi-abc")
+    for var in ("KIMI_CODING_API_KEY", "KIMI_BASE_URL"):
+        monkeypatch.delenv(var, raising=False)
+
+    def write(body: str) -> None:
+        plugin = home / "plugins" / "model-providers" / "kimi-coding"
+        plugin.mkdir(parents=True)
+        (plugin / "__init__.py").write_text(textwrap.dedent(body))
+        (plugin / "plugin.yaml").write_text("name: kimi-user-override\nkind: model-provider\nversion: 0.0.1\n")
+        _rediscover()
+
+    yield write
+    _rediscover()
+
+
+def _runtime_and_status_urls() -> tuple[str, str]:
+    from hermes_cli.auth import get_api_key_provider_status, resolve_api_key_provider_credentials
+
+    return (
+        resolve_api_key_provider_credentials("kimi-coding")["base_url"],
+        get_api_key_provider_status("kimi-coding")["base_url"],
+    )
+
+
+def test_user_plugin_without_the_hook_keeps_bundled_routing(user_kimi_plugin):
+    """A ``$HERMES_HOME`` plugin re-registering ``kimi-coding`` as a plain ProviderProfile keeps the
+    bundled key-prefix routing: an ``sk-kimi-`` key still reaches Kimi Code at runtime and in status."""
+    import providers
     from hermes_cli.auth_zai_kimi import KIMI_CODE_BASE_URL
 
-    plain = ProviderProfile(name="kimi-coding", api_mode="chat_completions")
-    monkeypatch.setattr(providers, "get_provider_profile", lambda name: plain)
-    url = resolve_provider_base_url(PROVIDER_REGISTRY["kimi-coding"], api_key="sk-kimi-abc", env_url="")
-    assert url == KIMI_CODE_BASE_URL
+    user_kimi_plugin("""
+        from providers import register_provider
+        from providers.base import ProviderProfile
+
+        register_provider(ProviderProfile(name="kimi-coding", api_mode="chat_completions", base_url="https://api.moonshot.ai/v1"))
+    """)
+    assert type(providers.get_provider_profile("kimi-coding")) is ProviderProfile  # the user's profile is live
+    assert _runtime_and_status_urls() == (KIMI_CODE_BASE_URL, KIMI_CODE_BASE_URL)
 
 
-def test_runtime_reregistration_without_the_hook_keeps_bundled_routing(monkeypatch):
+def test_user_plugin_with_its_own_hook_wins(user_kimi_plugin):
+    user_kimi_plugin("""
+        from providers import register_provider
+        from providers.base import ProviderProfile
+
+        class Mine(ProviderProfile):
+            def resolve_base_url(self, *, api_key, default_url, env_url, probe=True):
+                return "https://user-hook.example/v1"
+
+        register_provider(Mine(name="kimi-coding", api_mode="chat_completions"))
+    """)
+    assert _runtime_and_status_urls() == ("https://user-hook.example/v1", "https://user-hook.example/v1")
+
+
+def test_runtime_reregistration_without_the_hook_keeps_bundled_routing(user_kimi_plugin):
     """A plain ``kimi-coding`` registered after discovery (legacy module / direct call) replaces the
     process-wide entry; the bundled profile's routing still applies."""
     import providers
-    from hermes_cli.auth import PROVIDER_REGISTRY, resolve_provider_base_url
     from hermes_cli.auth_zai_kimi import KIMI_CODE_BASE_URL
 
-    providers.get_provider_profile("kimi-coding")  # discovery
+    providers.get_provider_profile("kimi-coding")  # discovery: bundled profile only
     plain = ProviderProfile(name="kimi-coding", api_mode="chat_completions")
-    monkeypatch.setitem(providers._REGISTRY, "kimi-coding", plain)
+    providers.register_provider(plain)
     assert providers.get_provider_profile("kimi-coding") is plain
-    url = resolve_provider_base_url(PROVIDER_REGISTRY["kimi-coding"], api_key="sk-kimi-abc", env_url="")
-    assert url == KIMI_CODE_BASE_URL
+    assert _runtime_and_status_urls() == (KIMI_CODE_BASE_URL, KIMI_CODE_BASE_URL)

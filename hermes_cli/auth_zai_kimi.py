@@ -12,11 +12,6 @@ from hermes_cli.auth_constants import httpx
 
 logger = logging.getLogger("hermes_cli.auth")
 
-# In-process negative cache for Z.AI endpoint detection (ZaiProfile.resolve_base_url), keyed by key
-# hash: a failed probe is not retried for this long (a success persists to auth.json instead).
-_ZAI_PROBE_FAILURE_TTL_SECONDS = 300
-_zai_probe_failed_until: dict[str, float] = {}
-
 # "sk-kimi-" keys only work on api.kimi.com/coding; legacy moonshot keys use the old default.
 # NO /v1 suffix: the anthropic SDK appends "/v1/messages" itself ("/coding/v1" would 404).
 KIMI_CODE_BASE_URL = "https://api.kimi.com/coding"

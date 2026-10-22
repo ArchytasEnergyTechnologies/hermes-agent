@@ -529,9 +529,9 @@ class TestZaiEndpointAutoDetect:
     def test_failed_probe_is_not_repeated_within_ttl(self, monkeypatch):
         """A key whose detection fails (429 on every endpoint) is probed once, not on every
         credential resolution — the picker resolves Z.AI dozens of times per open (#114215)."""
-        from hermes_cli import auth_zai_kimi
+        from providers import get_provider_profile
         monkeypatch.setenv("GLM_API_KEY", "glm-key-that-429s")
-        monkeypatch.setattr(auth_zai_kimi, "_zai_probe_failed_until", {})
+        monkeypatch.setattr(type(get_provider_profile("zai")), "_probe_failed_until", {})
         calls = []
         monkeypatch.setattr("hermes_cli.auth.detect_zai_endpoint", lambda *a, **kw: calls.append(1))
         for _ in range(3):

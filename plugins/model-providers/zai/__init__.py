@@ -51,6 +51,11 @@ def _glm_5_2_reasoning_effort(reasoning_config: dict | None, *, model: str | Non
 class ZaiProfile(ProviderProfile):
     """Z.AI / GLM — extra_body.thinking on/off + GLM-5.2 reasoning_effort."""
 
+    # In-process negative cache for endpoint detection, keyed by key hash: a failed probe is not
+    # retried for this long (a success persists to auth.json instead).
+    _PROBE_FAILURE_TTL_SECONDS = 300
+    _probe_failed_until: dict[str, float] = {}
+
     def resolve_base_url(self, *, api_key: str, default_url: str, env_url: str, probe: bool = True) -> str:
         """Z.AI base URL by probing endpoints; an explicit GLM_BASE_URL always wins.
 
@@ -60,7 +65,6 @@ class ZaiProfile(ProviderProfile):
         """
         if not probe:
             return super().resolve_base_url(api_key=api_key, default_url=default_url, env_url=env_url, probe=False)
-        from hermes_cli import auth_zai_kimi
         from hermes_cli.auth import _auth_store_lock, _load_auth_store, _load_provider_state, _save_auth_store, _store_provider_state, detect_zai_endpoint
         if env_url:
             return env_url
@@ -76,14 +80,14 @@ class ZaiProfile(ProviderProfile):
             return cached["base_url"]
         # Only a success is persisted, so a failing key (429/401 on every endpoint) would re-run the
         # four chat-completion probes on every credential-pool load — dozens of times per picker open.
-        if auth_zai_kimi._zai_probe_failed_until.get(key_hash, 0.0) > time.time():
+        if self._probe_failed_until.get(key_hash, 0.0) > time.time():
             return default_url
 
         # Probe — may take up to ~8s per endpoint.
         detected = detect_zai_endpoint(api_key)
         if not (detected and detected.get("base_url")):
             logger.debug("Z.AI: probe failed, falling back to default %s", default_url)
-            auth_zai_kimi._zai_probe_failed_until[key_hash] = time.time() + auth_zai_kimi._ZAI_PROBE_FAILURE_TTL_SECONDS
+            self._probe_failed_until[key_hash] = time.time() + self._PROBE_FAILURE_TTL_SECONDS
             return default_url
 
         detected_endpoint = {
