@@ -1181,6 +1181,7 @@ in
     backendArgv
     backendBindAssertions
     backendDescription
+    backendSessionEnvironment
     deepConfigType
     effectivePackage
     gatewayArgv
