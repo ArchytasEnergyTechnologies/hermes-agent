@@ -549,7 +549,7 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
               # nothing in the command line has to read a secret any more.
               ++ lib.optional (
                 !lib.hasInfix "hermes-backend-launch" backendArgvText
-              ) "a sessionTokenFile alone must not force the launcher; the token path rides in the unit environment"
+              ) "a sessionTokenFile alone must not force the launcher; the token path rides in the unit environment (got: ${backendArgvText})"
 
               # Secret managers leave a "$XDG_RUNTIME_DIR" placeholder in
               # secret paths for a shell to expand (agenix's Home Manager
