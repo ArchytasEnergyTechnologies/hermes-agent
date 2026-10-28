@@ -129,6 +129,7 @@
         {
           description,
           argv,
+          environment ? { },
         }:
         {
           Unit = {
@@ -141,9 +142,12 @@
           Install.WantedBy = [ "default.target" ];
           Service = {
             Type = "simple";
-            Environment = (lib.mapAttrsToList (k: v: "${k}=${v}") processEnvironment) ++ [
-              "PATH=${unitPath}"
-            ];
+            Environment =
+              (lib.mapAttrsToList (k: v: "${k}=${v}") processEnvironment)
+              ++ (lib.mapAttrsToList (k: v: "${k}=${lib.escapeShellArg v}") environment)
+              ++ [
+                "PATH=${unitPath}"
+              ];
             ExecStart = lib.escapeShellArgs argv;
             WorkingDirectory = cfg.workingDirectory;
             Restart = cfg.restart;
@@ -157,15 +161,22 @@
         };
 
       mkAgent =
-        { argv, logName }:
+        {
+          argv,
+          logName,
+          environment ? { },
+        }:
         {
           enable = true;
           config = {
             Label = "org.nix-community.home.${logName}";
             ProgramArguments = argv;
-            EnvironmentVariables = processEnvironment // {
-              PATH = "${unitPath}:/usr/bin:/bin:/usr/sbin:/sbin";
-            };
+            EnvironmentVariables =
+              processEnvironment
+              // environment
+              // {
+                PATH = "${unitPath}:/usr/bin:/bin:/usr/sbin:/sbin";
+              };
             WorkingDirectory = cfg.workingDirectory;
             RunAtLoad = true;
             KeepAlive =
@@ -411,6 +422,7 @@
               systemd.user.services.hermes-backend = mkUnit {
                 description = common.backendDescription cfg;
                 argv = common.backendArgv { inherit pkgs cfg; };
+                environment = common.backendSessionEnvironment { inherit cfg; };
               };
             })
 
@@ -426,6 +438,7 @@
               launchd.agents.hermes-backend = mkAgent {
                 argv = common.backendArgv { inherit pkgs cfg; };
                 logName = "hermes-backend";
+                environment = common.backendSessionEnvironment { inherit cfg; };
               };
             })
           ]
