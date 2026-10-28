@@ -548,7 +548,7 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
               # With no waitFor, a token must no longer force the launcher:
               # nothing in the command line has to read a secret any more.
               ++ lib.optional (
-                !lib.hasInfix "hermes-backend-launch" backendArgvText
+                lib.hasInfix "hermes-backend-launch" backendArgvText
               ) "a sessionTokenFile alone must not force the launcher; the token path rides in the unit environment (got: ${backendArgvText})"
 
               # Secret managers leave a "$XDG_RUNTIME_DIR" placeholder in
