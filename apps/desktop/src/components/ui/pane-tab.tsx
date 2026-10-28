@@ -28,7 +28,7 @@ const TAB =
 // leave uncovered, so tabs fill the bar and no sliver of gutter shows through.
 const TAB_HORIZONTAL = 'h-full min-w-0 max-w-48 not-first:border-l not-first:border-l-(--ui-stroke-quaternary)'
 
-// A closeable tab's floor: 8px label inset + the ~19px opaque ✕ chip, so the
+// A closeable tab's floor: 8px label inset + the 23px opaque ✕ chip, so the
 // shortest labels (FILES, REVIEW) clear the chip and pass under nothing but the
 // gradient. A floor, not padding — a tab already wider than it pays nothing.
 const TAB_CLOSEABLE = 'min-w-13'
@@ -194,7 +194,7 @@ export const PaneTab = React.forwardRef<HTMLDivElement, PaneTabProps>(function P
           />
           <button
             aria-label={translateNow('common.close')}
-            className="grid cursor-pointer place-items-center bg-(--tab-face) pr-1.5 pl-0.5 text-(--ui-text-tertiary) outline-none hover:text-foreground group-data-[active=true]/tab:shadow-[inset_0_-2px_0_var(--pane-tab-active-accent,var(--theme-primary))]"
+            className="grid cursor-pointer place-items-center bg-(--tab-face) px-1.5 text-(--ui-text-tertiary) outline-none hover:text-foreground group-data-[active=true]/tab:shadow-[inset_0_-2px_0_var(--pane-tab-active-accent,var(--theme-primary))]"
             onClick={event => {
               event.preventDefault()
               event.stopPropagation()

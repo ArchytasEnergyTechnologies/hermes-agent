@@ -157,6 +157,7 @@ Notes:
   fixed heights). Only icon buttons carry the shared 4px radius.
 - SVGs inherit `size-3.5` (`size-3` at `xs`). Don't re-set icon size.
 - Polymorph with `asChild` when the button must render as a link/Slot.
+- Pane-tab close glyphs use equal horizontal padding so the ✕ doesn't crowd the label.
 
 ## Badges — one component
 
