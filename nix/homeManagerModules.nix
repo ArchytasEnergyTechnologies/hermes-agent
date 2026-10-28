@@ -101,11 +101,18 @@
       # The token is read at start time and never with `--set`. makeWrapper
       # writes a --set value into the Nix store, which all users can read.
       desktopRun = lib.optional desktopUsesService ''
-        if [ -r ${lib.escapeShellArg cfg.backend.sessionTokenFile} ]; then
-          HERMES_DESKTOP_REMOTE_TOKEN="$(tr -d '\r\n' < ${lib.escapeShellArg cfg.backend.sessionTokenFile})"
+        _token_file=${lib.escapeShellArg cfg.backend.sessionTokenFile}
+
+        # Secret managers leave a "$XDG_RUNTIME_DIR" placeholder in secret
+        # paths for a shell to expand (agenix's Home Manager module does).
+        # escapeShellArg froze it into a literal, so expand it here.
+        _token_file=''${_token_file//\$\{XDG_RUNTIME_DIR\}/''${XDG_RUNTIME_DIR:-}}
+
+        if [ -r "$_token_file" ]; then
+          HERMES_DESKTOP_REMOTE_TOKEN="$(tr -d '\r\n' < "$_token_file")"
           export HERMES_DESKTOP_REMOTE_TOKEN
         else
-          echo "hermes-desktop: cannot read the session token at ${cfg.backend.sessionTokenFile}." >&2
+          echo "hermes-desktop: cannot read the session token at $_token_file." >&2
           echo "hermes-desktop: the application starts its own backend instead of the one of the service." >&2
         fi
       '';

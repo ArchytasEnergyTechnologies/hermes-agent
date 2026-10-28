@@ -538,6 +538,16 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
               ++ lib.optional (
                 !lib.hasInfix tokenFile backendScript
               ) "the backend must read the token from ${tokenFile} at start time"
+
+              # Secret managers leave a "$XDG_RUNTIME_DIR" placeholder in
+              # secret paths for a shell to expand (agenix's Home Manager
+              # module does). escapeShellArg freezes the placeholder into a
+              # literal, so both readers must expand it before the
+              # readability check, or the token is never found.
+              ++ lib.optional (
+                !lib.hasInfix ''_token_file=''${_token_file//\$\{XDG_RUNTIME_DIR\}/''${XDG_RUNTIME_DIR:-}}'' backendScript
+                || !lib.hasInfix ''_token_file=''${_token_file//\$\{XDG_RUNTIME_DIR\}/''${XDG_RUNTIME_DIR:-}}'' wrapper
+              ) "the token readers must expand an unexpanded \"$XDG_RUNTIME_DIR\" in the token path"
               ++ lib.optional (
                 setValue "HERMES_DESKTOP_REMOTE_TOKEN" != null
               ) "the token must never be a --set value: makeWrapper writes it into the world-readable Nix store";

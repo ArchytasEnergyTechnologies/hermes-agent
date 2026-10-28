@@ -976,6 +976,12 @@ let
           # line is visible to each process on the host.
           _token_file=${lib.escapeShellArg cfg.backend.sessionTokenFile}
 
+          # Secret managers leave a "$XDG_RUNTIME_DIR" placeholder in secret
+          # paths for a shell or systemd to expand (agenix's Home Manager
+          # module does). escapeShellArg froze it into a literal, so expand
+          # it here; empty when unset, which the check below reports.
+          _token_file=''${_token_file//\$\{XDG_RUNTIME_DIR\}/''${XDG_RUNTIME_DIR:-}}
+
           if [ ! -r "$_token_file" ]; then
             echo "hermes-backend: cannot read the session token file '$_token_file'. The unit stops." >&2
             echo "hermes-backend: backend.sessionTokenFile must name a runtime path that this user can read." >&2
