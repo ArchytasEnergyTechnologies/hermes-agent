@@ -84,13 +84,13 @@ def test_canary_cut_keeps_the_stable_core_and_dispatches_exactly_once(canary_rep
     assert create[3] == tag
     assert {"--draft", "--prerelease", "--verify-tag"} <= set(create)
     dispatch = next(call for call in calls if call[1:3] == ["workflow", "run"])
-    # A canary runs the Stable Release pipeline itself: the same job graph, every lane on.
+    # A canary runs the Stable Release pipeline itself: the same job graph, the same default lanes.
     assert dispatch == [
         "gh", "workflow", "run", "stable-release.yml", "--ref", "main",
         "-f", f"tag={tag}", "--repo", "fixture/release",
     ]
     assert git("--git-dir", str(remote), "rev-parse", tag + "^{commit}") == git("rev-parse", "HEAD")
-    # The tag message is the claim admission reads: every lane a canary can run, green required.
+    # The tag message is the claim admission reads: the canary's default lanes, green required.
     from scripts.releases import lanes as lane_set, stable
 
     message = git("--git-dir", str(remote), "tag", "-l", tag, "--format=%(contents)")

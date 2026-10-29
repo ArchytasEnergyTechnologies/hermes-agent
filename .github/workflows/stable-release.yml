@@ -7,15 +7,16 @@ run-name: ${{ startsWith(inputs.tag, 'canary.') && 'Canary' || startsWith(inputs
 # every lane that tests or builds the payload is passed that commit.
 #
 # This one workflow is also the canary pipeline (canary-release.yml dispatches it with a
-# canary.<stamp>-vX.Y.Z tag), so a canary runs exactly the jobs a stable release does, with
-# every lane on except the signed-package upgrade arms (scripts/releases/lanes.py CANARY;
-# install-e2e covers old stable -> this commit). Admission emits the policy, and a canary
+# canary.<stamp>-vX.Y.Z tag), so a canary runs exactly the jobs a stable release does, from
+# the same default lanes (scripts/releases/lanes.py CANARY); its signed-package upgrade arms
+# upgrade the last published canary to this one. Admission emits the policy, and a canary
 # differs only in two ways:
 #   - where it publishes: publish-canary moves the canary channels (feeds, Termux APT, the
 #     protected R2 canary head, a GitHub prerelease, the canary Docker aliases). It never runs
 #     publish-bundles, so it never submits to the Store or moves a stable head or alias.
 #   - what green means: publish-canary waits only for the accepted candidate (built, smoked,
-#     staged). Every other suite still runs and turns the run red, but does not hold it back.
+#     staged) and the upgrade arms that ran. Every other suite still runs and turns the run red,
+#     but does not hold it back (unless the claim requires green).
 on:
   workflow_dispatch:
     inputs:
@@ -24,7 +25,7 @@ on:
         required: true
         type: string
       baseline-manifest:
-        description: Optional HTTPS manifest of the previous published stable packages
+        description: Optional HTTPS manifest of the previous published packages of the claim's policy (stable or canary)
         default: ''
         type: string
 
@@ -502,7 +503,7 @@ jobs:
   windows-packaged:
     name: Windows signed-package acceptance
     needs: [admit, transitions-win32]
-    # Without a published stable baseline there is no OLD package to upgrade from.
+    # Without a published baseline (the last stable, or for a canary the last canary) there is no OLD package.
     if: fromJSON(needs.admit.outputs.jobs)['windows-packaged'] && needs.transitions-win32.outputs.baseline != 'none'
     strategy:
       fail-fast: false
@@ -521,7 +522,7 @@ jobs:
   macos-packaged-arm64:
     name: macOS arm64 signed-package acceptance
     needs: [admit, transitions-darwin-arm64]
-    # Without a published stable baseline there is no OLD package to upgrade from.
+    # Without a published baseline (the last stable, or for a canary the last canary) there is no OLD package.
     if: fromJSON(needs.admit.outputs.jobs)['macos-packaged-arm64'] && needs.transitions-darwin-arm64.outputs.baseline != 'none'
     strategy:
       fail-fast: false
@@ -540,7 +541,7 @@ jobs:
   macos-packaged-x64:
     name: macOS x64 signed-package acceptance
     needs: [admit, transitions-darwin-x64]
-    # Without a published stable baseline there is no OLD package to upgrade from.
+    # Without a published baseline (the last stable, or for a canary the last canary) there is no OLD package.
     if: fromJSON(needs.admit.outputs.jobs)['macos-packaged-x64'] && needs.transitions-darwin-x64.outputs.baseline != 'none'
     strategy:
       fail-fast: false
