@@ -141,15 +141,11 @@ def test_the_claim_records_the_chosen_lanes_and_green_policy(canary_repo):
     git("commit", "--allow-empty", "-qm", "feat: next")
     from scripts.releases import lanes as lane_set, stable
 
-    # A canary can never run the signed-package upgrade arms; asking for them cuts nothing.
-    with pytest.raises(SystemExit, match="cannot run upgrade"):
-        release.cmd_canary(canary_args(with_lanes=["upgrade"]))
-    assert not git("tag", "--list", "canary.*") and calls == []
     tag = "canary.20260818T103000Z-v1.2.3"
-    release.cmd_canary(canary_args(without_lanes=["macos-intel,termux"], require_green=False))
+    release.cmd_canary(canary_args(with_lanes=["macos-intel"], without_lanes=["upgrade"], require_green=False))
     message = git("--git-dir", str(remote), "tag", "-l", tag, "--format=%(contents)")
     claim = stable.canary_claim(message, tag=tag, commit=git("rev-parse", "HEAD"))
-    assert claim["lanes"] == lane_set.CANARY - {"macos-intel", "termux"}
+    assert claim["lanes"] == lane_set.CANARY - {"upgrade"} | {"macos-intel"}
     assert claim["requireGreen"] is False
 
 

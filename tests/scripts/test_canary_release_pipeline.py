@@ -1,8 +1,8 @@
-"""A canary is a Stable Release run on its own tag: every lane, canary destinations.
+"""A canary is a Stable Release run on its own tag: the stable lanes, canary destinations.
 
 canary-release.yml dispatches stable-release.yml with ``canary.<stamp>-vX.Y.Z``. These tests pin
 the parts of the stable controller that branch on that tag: admission (the claim message's lanes,
-starting from every lane but the signed-package upgrade arms, and its green policy; the tag stamp
+starting from the stable default lanes, and its green policy; the tag stamp
 as the epoch; main only), candidate validation (canary package versions), the Docker tag, and
 publication to the canary channels only.
 """
@@ -87,12 +87,12 @@ def test_a_canary_claim_runs_its_claimed_lanes_from_its_tag_stamp_on_main_only()
 
 def test_the_claim_message_carries_the_canary_lanes_and_green_policy():
     env = {**CONTROLLER_ENV, "RELEASE_CLAIM_TAG": CANARY, "RELEASE_CLAIM_OBJECT": TAG_OBJECT}
-    narrow = sorted(lane_set.CANARY - {"macos-intel", "termux", "termux-checks"})
+    narrow = sorted(lane_set.CANARY - {"upgrade", "windows-store"})
     claim = stable.check_claim(env, _git(message=claim_message(lanes=narrow, requireGreen=False)))
     assert claim["lanes"] == frozenset(narrow) and claim["require_green"] is False
-    # A canary is its own app identity: no claim may ask for the signed-package upgrade arms.
-    with pytest.raises(ValueError, match="cannot run upgrade"):
-        stable.check_claim(env, _git(message=claim_message(lanes=sorted(lane_set.NAMES))))
+    # A canary may run every lane a stable release can, the signed-package upgrade arms included.
+    claim = stable.check_claim(env, _git(message=claim_message(lanes=sorted(lane_set.NAMES))))
+    assert claim["lanes"] == frozenset(lane_set.NAMES)
     for bad in (claim_message(requireGreen=None), claim_message(requireGreen="no"),
                 claim_message(version="1.2.4"), claim_message(commit="c" * 40),
                 claim_message(kind="stable"), claim_message(lanesRevision=1),
@@ -106,8 +106,7 @@ def test_lanes_select_starts_each_policy_from_its_own_base():
     assert lane_set.select() == lane_set.DEFAULT
     assert lane_set.select(policy="canary", without=["termux"]) == lane_set.CANARY - {"termux"}
     assert lane_set.select(policy="canary", only=["windows", "smoke"]) == {"windows", "smoke"}
-    with pytest.raises(ValueError, match="cannot run upgrade"):
-        lane_set.select(policy="canary", with_=["upgrade"])
+    assert lane_set.select(policy="canary", with_=["macos-intel"]) == lane_set.CANARY | {"macos-intel"}
     with pytest.raises(ValueError, match="unknown release policy"):
         lane_set.select(policy="nightly")
 
@@ -148,10 +147,10 @@ def test_canary_admission_needs_its_prerelease_and_emits_the_canary_policy(tmp_p
     jobs = json.loads(emitted["jobs"])
     assert jobs == lane_set.jobs_to_run(lane_set.CANARY, "canary")
     assert jobs["publish-canary"] and not jobs["publish-bundles"]
-    assert jobs["candidates-darwin-x64"] and jobs["candidates-termux"] and jobs["termux-checks"]
-    # Old stable -> this commit runs unbundled (install-e2e); no signed-package upgrade arm runs.
-    assert jobs["install-e2e"]
-    assert not any(jobs[job] for job in ("transitions-win32", "windows-packaged", "macos-packaged-arm64"))
+    # The stable default: macOS Intel and Termux are opt-in, and the upgrade arms (last published
+    # canary -> this one) run beside install-e2e.
+    assert not (jobs["candidates-darwin-x64"] or jobs["candidates-termux"] or jobs["termux-checks"])
+    assert all(jobs[job] for job in ("install-e2e", "transitions-win32", "windows-packaged", "macos-packaged-arm64"))
     assert "## Canary candidate" in summary.read_text(encoding="utf-8")
     # A canary owns a prerelease; a non-prerelease would be stable's draft.
     monkeypatch.setattr(stable, "output", lambda _argv: json.dumps({**release, "isPrerelease": False}))
@@ -201,8 +200,9 @@ def test_canary_candidates_carry_the_canary_package_versions():
     manifest = canary_candidates()
     rows = stable.validate_candidates(manifest, CANARY, COMMIT, BASE, stable.canary_epoch(CANARY), archive=CANARY)
     assert set(rows) == set(lane_set.TARGET_LANE)
-    stable.require_targets_match_claim(manifest, lane_set.CANARY)
-    stable.require_smokes_match_claim(manifest, lane_set.CANARY)
+    # The fixture builds every target: a claim that opted macOS Intel and Termux in.
+    stable.require_targets_match_claim(manifest, lane_set.NAMES)
+    stable.require_smokes_match_claim(manifest, lane_set.NAMES)
     # A canary stamped with stable's quad, or a Termux package without its ~canary version, is refused.
     wrong = copy.deepcopy(manifest)
     for row in wrong["packages"]:

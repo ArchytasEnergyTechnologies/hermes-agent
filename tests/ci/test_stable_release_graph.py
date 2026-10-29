@@ -144,30 +144,24 @@ def test_every_lane_controlled_job_runs_exactly_when_the_lane_table_says(lanes, 
         assert "outputs.jobs" not in str(jobs[name].get("if", "")), name
 
 
-def test_a_canary_runs_every_stable_job_with_every_lane_and_differs_only_in_publication():
-    """canary-release.yml runs this same workflow: nothing to keep in sync. With the canary's lanes
-    (every lane but the signed-package upgrade arms) the canary runs exactly the jobs a stable
-    release with every lane runs, except those arms and the other policy's publication job."""
+def test_a_canary_runs_the_stable_default_jobs_and_differs_only_in_publication():
+    """canary-release.yml runs this same workflow: nothing to keep in sync. A canary starts from the
+    stable default lanes (its upgrade arms pair the last published canary with this one) and runs
+    exactly the jobs a default stable release runs, except the other policy's publication job."""
     jobs = workflow("stable-release.yml")["jobs"]
-    # The canary app cannot upgrade a stable install; install-e2e tests old stable -> this commit.
-    assert lane_set.CANARY == frozenset(lane_set.NAMES) - {"upgrade"}
+    assert lane_set.POLICY_BASE["canary"] == lane_set.POLICY_BASE["stable"] == lane_set.DEFAULT
+    assert lane_set.POLICY_REFUSED["canary"] == lane_set.POLICY_REFUSED["stable"] == frozenset()
     canary = lane_set.jobs_to_run(lane_set.CANARY, "canary")
     assert set(canary) <= set(jobs)
-    upgrade = {job for job, needs in lane_set.JOB_LANES.items() if "upgrade" in needs}
-    assert upgrade == {"transitions-darwin-arm64", "transitions-darwin-x64", "transitions-win32",
-                       "macos-packaged-arm64", "macos-packaged-x64", "windows-packaged"}
-    stable_all = lane_set.jobs_to_run(lane_set.NAMES, "stable")
+    stable_default = lane_set.jobs_to_run(lane_set.DEFAULT, "stable")
     # The publication jobs that run under exactly one of the two policies.
     either = {job for job, policies in lane_set.POLICY_JOBS.items() if ("stable" in policies) != ("canary" in policies)}
     assert either == {"publish-bundles", "publish-canary"}
-    assert {job for job in canary if canary[job] != stable_all[job]} == either | upgrade
-    # Every other build and test job runs: macOS Intel and Termux included, which a default claim
-    # leaves out, and install-e2e, which updates released stable tags to the canary commit.
-    not_canary = {job for job, policies in lane_set.POLICY_JOBS.items() if "canary" not in policies}
-    assert not_canary == {"publish-bundles", "publish-commit", "publish-channel"}
-    assert {job for job, runs in canary.items() if not runs} == not_canary | upgrade
-    for opted_out in ("candidates-darwin-x64", "candidates-termux", "termux-checks"):
-        assert canary[opted_out] and not lane_set.jobs_to_run(lane_set.DEFAULT)[opted_out], opted_out
+    assert {job for job in canary if canary[job] != stable_default[job]} == either
+    upgrade = {job for job, needs in lane_set.JOB_LANES.items() if "upgrade" in needs}
+    assert all(canary[job] == stable_default[job] for job in upgrade)
+    # A lane stable opts into, a canary opts into the same way.
+    assert lane_set.select(policy="canary", with_=["macos-intel"]) == lane_set.select(with_=["macos-intel"])
     with pytest.raises(ValueError, match="policy"):
         lane_set.jobs_to_run(lane_set.CANARY, "preview")
     # The run is titled by policy; stable keeps the title the sequencer matches runs by.
