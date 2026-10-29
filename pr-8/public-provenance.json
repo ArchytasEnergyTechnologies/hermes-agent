@@ -1,0 +1,327 @@
+{
+  "schema": 1,
+  "pr": 8,
+  "application": "Hermes desktop production Electron build",
+  "source": {
+    "before": {
+      "commit": "fcc26fbd9f1641755e49793d7ed608f3b7214c3d",
+      "dirty": false,
+      "displayVersion": "0.22.5-ux-before",
+      "builtAt": "2026-10-29T16:58:31.677Z",
+      "stampSource": "local",
+      "appAsarSha256": "fb811100ba2013c72fd22de9b3e96daf86e26d356d44a6068a1c0a3db0503d5d"
+    },
+    "after": {
+      "commit": "67defefd4642acd4bedf059392195b28ee9a3344",
+      "dirty": false,
+      "displayVersion": "0.22.5-padding-pr",
+      "builtAt": "2026-10-29T16:57:27.473Z",
+      "stampSource": "local",
+      "appAsarSha256": "ede02c7089a81670de3b1baca467eba29a282ee6a0522262aafe4fd8773efdc1"
+    }
+  },
+  "capture": {
+    "viewportCss": {
+      "width": 1100,
+      "height": 760
+    },
+    "devicePixelRatio": 2,
+    "browserZoom": 1,
+    "theme": "light",
+    "titles": [
+      "Getting started",
+      "Untitled session"
+    ],
+    "method": "Native OMP browser CDP controls and renderer screenshots. No DOM/UI mutation, synthetic app paint, or fake controls.",
+    "sequence": [
+      "Open generic Getting started session through real sidebar",
+      "Click New session tab to create empty Untitled session tile",
+      "Hide sidebar through actual control",
+      "Move pointer away, then hover the actual context-menu-wrapped session tab",
+      "For recorded head: activate empty draft, hover, right-click session tab, Escape, hover actual Close button, click Close",
+      "Observe Untitled session tile absent after click; no prompt sent"
+    ],
+    "sameStateComparison": "Before/after PNG compares the hovered Untitled session tab with the generic Getting started tab visually selected in both originals. The separate head interaction activates and closes the empty draft."
+  },
+  "geometry": {
+    "before": {
+      "idle": {
+        "viewport": {
+          "width": 1100,
+          "height": 760,
+          "dpr": 2
+        },
+        "theme": "light",
+        "zoom": "1",
+        "tab": {
+          "text": "Untitled session",
+          "slot": "context-menu-trigger",
+          "contextMenuTrigger": true,
+          "hover": false,
+          "rect": {
+            "x": 264.8828125,
+            "y": 0,
+            "width": 137.2578125,
+            "height": 34,
+            "top": 0,
+            "right": 402.140625,
+            "bottom": 34,
+            "left": 264.8828125
+          }
+        },
+        "content": {
+          "rect": {
+            "x": 264.8828125,
+            "y": 0,
+            "width": 137.2578125,
+            "height": 34,
+            "top": 0,
+            "right": 402.140625,
+            "bottom": 34,
+            "left": 264.8828125
+          },
+          "mask": "none"
+        },
+        "close": {
+          "ariaLabel": "Close",
+          "rect": {
+            "x": 391.140625,
+            "y": 0,
+            "width": 11,
+            "height": 34,
+            "top": 0,
+            "right": 402.140625,
+            "bottom": 34,
+            "left": 391.140625
+          },
+          "opacity": "0",
+          "pointerEvents": "none",
+          "closeWidthVariable": ""
+        }
+      },
+      "hover": {
+        "viewport": {
+          "width": 1100,
+          "height": 760,
+          "dpr": 2
+        },
+        "theme": "light",
+        "zoom": "1",
+        "tab": {
+          "text": "Untitled session",
+          "slot": "context-menu-trigger",
+          "contextMenuTrigger": true,
+          "hover": true,
+          "rect": {
+            "x": 264.8828125,
+            "y": 0,
+            "width": 137.2578125,
+            "height": 34,
+            "top": 0,
+            "right": 402.140625,
+            "bottom": 34,
+            "left": 264.8828125
+          }
+        },
+        "content": {
+          "rect": {
+            "x": 264.8828125,
+            "y": 0,
+            "width": 137.2578125,
+            "height": 34,
+            "top": 0,
+            "right": 402.140625,
+            "bottom": 34,
+            "left": 264.8828125
+          },
+          "mask": "none"
+        },
+        "close": {
+          "ariaLabel": "Close",
+          "rect": {
+            "x": 391.140625,
+            "y": 0,
+            "width": 11,
+            "height": 34,
+            "top": 0,
+            "right": 402.140625,
+            "bottom": 34,
+            "left": 391.140625
+          },
+          "opacity": "1",
+          "pointerEvents": "auto",
+          "closeWidthVariable": ""
+        }
+      }
+    },
+    "after": {
+      "idle": {
+        "viewport": {
+          "width": 1100,
+          "height": 760,
+          "dpr": 2
+        },
+        "theme": "light",
+        "zoom": "1",
+        "tab": {
+          "text": "Untitled session",
+          "slot": "pane-tab",
+          "contextMenuTrigger": true,
+          "hover": false,
+          "rect": {
+            "x": 264.8828125,
+            "y": 0,
+            "width": 137.2578125,
+            "height": 34,
+            "top": 0,
+            "right": 402.140625,
+            "bottom": 34,
+            "left": 264.8828125
+          }
+        },
+        "content": {
+          "rect": {
+            "x": 264.8828125,
+            "y": 0,
+            "width": 137.2578125,
+            "height": 34,
+            "top": 0,
+            "right": 402.140625,
+            "bottom": 34,
+            "left": 264.8828125
+          },
+          "mask": "none"
+        },
+        "close": {
+          "ariaLabel": "Close",
+          "rect": {
+            "x": 378.140625,
+            "y": 0,
+            "width": 24,
+            "height": 34,
+            "top": 0,
+            "right": 402.140625,
+            "bottom": 34,
+            "left": 378.140625
+          },
+          "opacity": "0",
+          "pointerEvents": "none",
+          "closeWidthVariable": "1.5rem"
+        }
+      },
+      "hover": {
+        "viewport": {
+          "width": 1100,
+          "height": 760,
+          "dpr": 2
+        },
+        "theme": "light",
+        "zoom": "1",
+        "tab": {
+          "text": "Untitled session",
+          "slot": "pane-tab",
+          "contextMenuTrigger": true,
+          "hover": true,
+          "rect": {
+            "x": 264.8828125,
+            "y": 0,
+            "width": 137.2578125,
+            "height": 34,
+            "top": 0,
+            "right": 402.140625,
+            "bottom": 34,
+            "left": 264.8828125
+          }
+        },
+        "content": {
+          "rect": {
+            "x": 264.8828125,
+            "y": 0,
+            "width": 137.2578125,
+            "height": 34,
+            "top": 0,
+            "right": 402.140625,
+            "bottom": 34,
+            "left": 264.8828125
+          },
+          "mask": "linear-gradient(to right, rgb(0, 0, 0) calc(100% - 40px), rgba(0, 0, 0, 0) calc(100% - 24px))"
+        },
+        "close": {
+          "ariaLabel": "Close",
+          "rect": {
+            "x": 378.140625,
+            "y": 0,
+            "width": 24,
+            "height": 34,
+            "top": 0,
+            "right": 402.140625,
+            "bottom": 34,
+            "left": 378.140625
+          },
+          "opacity": "1",
+          "pointerEvents": "auto",
+          "closeWidthVariable": "1.5rem"
+        }
+      }
+    }
+  },
+  "observed": {
+    "before": "Close button is 11×34 CSS pixels, slot is context-menu-trigger, no label mask on hover.",
+    "after": "Close button is 24×34 CSS pixels, pane-tab slot retained alongside context-menu trigger, hover mask fades from width−40px to transparent at width−24px.",
+    "closeAction": "Actual empty draft tile removed after real Close click; generic Getting started tab remains."
+  },
+  "artifacts": {
+    "pr-8-before-after.png": {
+      "bytes": 419534,
+      "sha256": "5363ff12155b08d21e6b61afcaff70aa469d48aa01761051f2bd37fa442e4eff",
+      "width": 1170,
+      "height": 554
+    },
+    "pr-8-close-result.png": {
+      "bytes": 186371,
+      "sha256": "ef7405d4bb5d9dde794000f2d31835d979ca5568c545ac5d4339d5e12b90c8d5",
+      "width": 1170,
+      "height": 358
+    },
+    "pr-8-hover-menu.gif": {
+      "bytes": 626742,
+      "sha256": "c3100f5449264b065b723079078e53a3cc4d847342128bd24b9317332454c703",
+      "width": 800,
+      "height": 888,
+      "frames": 64,
+      "durationSeconds": 5.33
+    },
+    "pr-8-close.gif": {
+      "bytes": 160109,
+      "sha256": "dddf197c0ff36dcdb988287306689f1cf9111f1f41066c67bee8080a1bf3ae66",
+      "width": 1200,
+      "height": 170,
+      "frames": 42,
+      "durationSeconds": 3.5
+    }
+  },
+  "derivation": {
+    "pr-8-before-after.png": "Matching untouched 2200×1520 screenshot originals. Detail crop: x245,y0,w780,h68 physical px, scaled to1170×102. Full-width header-only crop: x0,y0,w2200,h68, reduced to1170×36. Captions outside app pixels. Body excluded entirely.",
+    "pr-8-close-result.png": "Two actual head screenshot header crops at x245,y0,w780,h68 physical px, scaled to1170×102; captions outside app pixels.",
+    "pr-8-hover-menu.gif": "Original continuous production-app video segment11.5s through16.8s, crop x90,y0,w500,h500 source video px, scale to800×800, external88px caption band. Real-time duration retained; 12fps GIF with8/9-centisecond delays. Stops before body content returns after close.",
+    "pr-8-close.gif": "Same continuous recording segment15.5s through19.0s, header-only crop x90,y0,w500,h34, scale to1200×82, external88px caption band. Actual Close click and tab disappearance. Real-time duration retained at12fps."
+  },
+  "privacy": {
+    "publicAllowlist": [
+      "pr-8-before-after.png",
+      "pr-8-close-result.png",
+      "pr-8-hover-menu.gif",
+      "pr-8-close.gif",
+      "public-provenance.json"
+    ],
+    "privateOriginals": "Full-window original PNGs/video and detailed local provenance are PRIVATE and must not be published.",
+    "audit": "All64 menu-GIF frames and all42 close-GIF frames inspected through coalesced contact sheets; final comparison and close-result PNGs inspected. Public media contains generic tab titles and relevant controls only. No user names, message bodies, account identifiers, project names, local paths, terminal content or secrets. No redaction paint or masks used; cropping excludes private content."
+  },
+  "cleanup": {
+    "appsStopped": true,
+    "browserHandlesReleased": true,
+    "sourceCodeEdits": false,
+    "prEdits": false,
+    "buildsTestsLintersFormattersRun": false
+  }
+}

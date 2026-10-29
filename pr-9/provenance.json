@@ -1,0 +1,1012 @@
+{
+  "classification": "PUBLISH-SAFE derived evidence only",
+  "pr": 9,
+  "headSha": "7a1c062a71264e812ca3b44039aa89e2ace96363",
+  "baseSha": "fcc26fbd9f1641755e49793d7ed608f3b7214c3d",
+  "headAsarSha256": "110a89b50a71af5eb9183fc44ee1c91d00b791ad303688a5c3540dca3af2abde",
+  "baseAsarSha256": "fb811100ba2013c72fd22de9b3e96daf86e26d356d44a6068a1c0a3db0503d5d",
+  "source": "Genuine packaged native Hermes renderer, captured through OMP browser CDP tooling; exact clean stamps observed in native launch output. No app DOM/CSS/state injection.",
+  "format": "GIFs are honestly labeled keyboard checkpoints: genuine screenshots captured after actual key events and held for readability, NOT continuous video. Original native MP4 recordings are preserved privately.",
+  "artifacts": [
+    {
+      "file": "session-tabs-keyboard.gif",
+      "bytes": 154023,
+      "description": "Generic empty draft session tabs: keyboard entry, focus vs selection, Enter/Space activation after 1.6s dwell, Delete with sibling focus."
+    },
+    {
+      "file": "zone-sidebar-keyboard.gif",
+      "bytes": 325615,
+      "description": "Sessions/Bots roving focus and activation; sidebar title/action menu keyboard path with timestamp skipped."
+    },
+    {
+      "file": "sidebar-focus-before-after.png",
+      "bytes": 169797,
+      "description": "Exact-base vs head title focus after real Tab; generic system-generated onboarding title only."
+    },
+    {
+      "file": "find-focus-before-after.png",
+      "bytes": 116793,
+      "description": "Exact-base vs head Find input focus on empty draft, opened by Command+F."
+    },
+    {
+      "file": "forced-colors-menu.png",
+      "bytes": 218982,
+      "description": "Explicit Chromium forced-colors emulation, actual focused control only: 1 solid outline, 12 unfocused controls without outline."
+    }
+  ],
+  "transformations": {
+    "sessionCrop": {
+      "physicalPixels": "780x104+500+0",
+      "resizeWidth": 1000
+    },
+    "zoneCrop": {
+      "physicalPixels": "300x80+0+60",
+      "resizeWidth": 940
+    },
+    "sidebarCrop": {
+      "physicalPixels": "470x120+20+960",
+      "resizeWidth": 940,
+      "privacyMask": "Opaque rectangle at crop coordinates 0,0 through 380,58, explicitly labeled METADATA HIDDEN. Outside title/action controls, applied identically in every sidebar frame and both comparison panels."
+    },
+    "findCrop": {
+      "physicalPixels": "600x110+1150+68",
+      "resizeWidth": 1000
+    },
+    "forcedColorsCrop": {
+      "physicalPixels": "322x730+148+1020",
+      "resizeWidth": 640
+    },
+    "captions": "External dark header/footer bands; actual key labels, measured focus/selection states. No app pixels changed except disclosed sidebar metadata mask; all other image changes are crop/scale."
+  },
+  "observations": {
+    "base": "Actual exact base is NOT already fixed: title :focus-visible=true but no shadow/outline; Find input outline none; visible role=tab elements tabIndex=-1.",
+    "head": "Title 2px inset ring; Find single 2px input outline; session/zone tabs rove without selecting until Enter/Space. Session activation and Delete snapshots after 1600ms retain role=tab focus.",
+    "forcedColors": {
+      "emulated": true,
+      "controls": 13,
+      "focusedSolidOutlines": 1,
+      "unfocusedSolidOutlines": 0
+    }
+  },
+  "privacyReview": "All decoded GIF frames/contact sheets and all static publish-safe crops visually inspected. No usernames, emails, local paths, avatars, project names, terminal text, user chat content or secrets in public media. Sidebar title is the generic system onboarding title Getting started #2; metadata is masked.",
+  "checkpoints": [
+    {
+      "checkpoint": "head-zone-01",
+      "key": "Shift+Tab",
+      "caption": "Shift+Tab: enter Sessions/Bots zone strip",
+      "settleMs": 1000,
+      "active": {
+        "role": "tab",
+        "name": "Sessions",
+        "focusVisible": true,
+        "outline": "rgb(0, 83, 253) solid 2px",
+        "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 83, 253) 0px -2px 0px 0px inset",
+        "geometry": {
+          "x": 0,
+          "y": 34,
+          "width": 73.8984375,
+          "height": 28
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": true
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "Getting started #2",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-zone-02",
+      "key": "ArrowRight",
+      "caption": "ArrowRight: focus Bots; Sessions stays selected",
+      "settleMs": 1000,
+      "active": {
+        "role": "tab",
+        "name": "Bots",
+        "focusVisible": true,
+        "outline": "rgb(0, 83, 253) solid 2px",
+        "boxShadow": "none",
+        "geometry": {
+          "x": 73.8984375,
+          "y": 34,
+          "width": 48.1796875,
+          "height": 28
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": 0,
+          "focusVisible": true
+        },
+        {
+          "name": "Getting started #2",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-zone-03",
+      "key": "Enter",
+      "caption": "Enter: activate Bots, retaining tab focus",
+      "settleMs": 1000,
+      "active": {
+        "role": "tab",
+        "name": "Bots",
+        "focusVisible": true,
+        "outline": "rgb(0, 83, 253) solid 2px",
+        "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 83, 253) 0px -2px 0px 0px inset",
+        "geometry": {
+          "x": 73.8984375,
+          "y": 34,
+          "width": 48.1796875,
+          "height": 28
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "Bots",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": true
+        },
+        {
+          "name": "Getting started #2",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        },
+        {
+          "name": "Scheduled jobs",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-zone-04",
+      "key": "ArrowLeft",
+      "caption": "ArrowLeft: focus Sessions; Bots stays selected",
+      "settleMs": 1000,
+      "active": {
+        "role": "tab",
+        "name": "Sessions",
+        "focusVisible": true,
+        "outline": "rgb(0, 83, 253) solid 2px",
+        "boxShadow": "none",
+        "geometry": {
+          "x": 0,
+          "y": 34,
+          "width": 73.8984375,
+          "height": 28
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": false,
+          "tabIndex": 0,
+          "focusVisible": true
+        },
+        {
+          "name": "Bots",
+          "selected": true,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "Getting started #2",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        },
+        {
+          "name": "Scheduled jobs",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-zone-05",
+      "key": "Space",
+      "caption": "Space: activate Sessions, retaining tab focus",
+      "settleMs": 1000,
+      "active": {
+        "role": "tab",
+        "name": "Sessions",
+        "focusVisible": true,
+        "outline": "rgb(0, 83, 253) solid 2px",
+        "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 83, 253) 0px -2px 0px 0px inset",
+        "geometry": {
+          "x": 0,
+          "y": 34,
+          "width": 73.8984375,
+          "height": 28
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": true
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "Getting started #2",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-sidebar-01",
+      "key": null,
+      "caption": "New segment: initial focus helper targets existing session title",
+      "settleMs": 700,
+      "active": {
+        "role": "button",
+        "name": "Getting started #2",
+        "focusVisible": true,
+        "outline": "rgb(229, 151, 0) none 1px",
+        "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 83, 253) 0px 0px 0px 2px inset, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+        "geometry": {
+          "x": 18,
+          "y": 511.59375,
+          "width": 216,
+          "height": 20
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "Getting started #2",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-sidebar-02",
+      "key": "Shift+Tab",
+      "caption": "Shift+Tab: reach Session actions, skipping timestamp",
+      "settleMs": 1000,
+      "active": {
+        "role": "button",
+        "name": "Session actions",
+        "focusVisible": true,
+        "outline": "rgb(229, 151, 0) none 1px",
+        "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 83, 253) 0px 0px 0px 2px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+        "geometry": {
+          "x": 214,
+          "y": 485.1953125,
+          "width": 20,
+          "height": 20
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "Getting started #2",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-sidebar-03",
+      "key": "Space",
+      "caption": "Space: open Session actions menu",
+      "settleMs": 1000,
+      "active": {
+        "role": "menuitem",
+        "name": "New window",
+        "focusVisible": true,
+        "outline": "rgb(229, 151, 0) none 1px",
+        "boxShadow": "none",
+        "geometry": {
+          "x": 79,
+          "y": 516,
+          "width": 150,
+          "height": 24
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "Getting started #2",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-sidebar-04",
+      "key": "Escape",
+      "caption": "Escape: close menu and restore action focus",
+      "settleMs": 1000,
+      "active": {
+        "role": "button",
+        "name": "Session actions",
+        "focusVisible": true,
+        "outline": "rgb(229, 151, 0) none 1px",
+        "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 83, 253) 0px 0px 0px 2px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+        "geometry": {
+          "x": 214,
+          "y": 485.1953125,
+          "width": 20,
+          "height": 20
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "Getting started #2",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-sidebar-05",
+      "key": "Tab",
+      "caption": "Tab: reach session title; timestamp is not a stop",
+      "settleMs": 1000,
+      "active": {
+        "role": "button",
+        "name": "Getting started #2",
+        "focusVisible": true,
+        "outline": "rgb(229, 151, 0) none 1px",
+        "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 83, 253) 0px 0px 0px 2px inset, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+        "geometry": {
+          "x": 18,
+          "y": 511.59375,
+          "width": 216,
+          "height": 20
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "Getting started #2",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-safe-tabs-00",
+      "key": null,
+      "caption": "Keyboard starting point: New session (+) button",
+      "settleMs": 700,
+      "active": {
+        "role": "button",
+        "name": "New session tab",
+        "focusVisible": true,
+        "outline": "rgb(229, 151, 0) none 1px",
+        "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0.527864 -0.0327826 -0.257344 / 0.5) 0px 0px 0px 3px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+        "geometry": {
+          "x": 503.734375,
+          "y": 5,
+          "width": 24,
+          "height": 24
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "New session",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "Untitled session",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-safe-tabs-01",
+      "key": "Shift+Tab",
+      "caption": "Shift+Tab: enter session tab strip",
+      "settleMs": 1000,
+      "active": {
+        "role": "tab",
+        "name": "Untitled session",
+        "focusVisible": true,
+        "outline": "rgb(0, 83, 253) solid 2px",
+        "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 83, 253) 0px -2px 0px 0px inset",
+        "geometry": {
+          "x": 366.4765625,
+          "y": 0,
+          "width": 137.2578125,
+          "height": 34
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "New session",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "Untitled session",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": true
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-safe-tabs-02",
+      "key": "Home",
+      "caption": "Home: move focus only; draft remains selected",
+      "settleMs": 1000,
+      "active": {
+        "role": "tab",
+        "name": "New session",
+        "focusVisible": true,
+        "outline": "rgb(0, 83, 253) solid 2px",
+        "boxShadow": "none",
+        "geometry": {
+          "x": 260,
+          "y": 0,
+          "width": 106.4765625,
+          "height": 34
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "New session",
+          "selected": false,
+          "tabIndex": 0,
+          "focusVisible": true
+        },
+        {
+          "name": "Untitled session",
+          "selected": true,
+          "tabIndex": -1,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-safe-tabs-03",
+      "key": "Enter",
+      "caption": "Enter: activate New session; focus stays on tab",
+      "settleMs": 1600,
+      "active": {
+        "role": "tab",
+        "name": "New session",
+        "focusVisible": true,
+        "outline": "rgb(0, 83, 253) solid 2px",
+        "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 83, 253) 0px -2px 0px 0px inset",
+        "geometry": {
+          "x": 260,
+          "y": 0,
+          "width": 106.4765625,
+          "height": 34
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "New session",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": true
+        },
+        {
+          "name": "Untitled session",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-safe-tabs-04",
+      "key": "ArrowRight",
+      "caption": "ArrowRight: focus draft without selecting it",
+      "settleMs": 1000,
+      "active": {
+        "role": "tab",
+        "name": "Untitled session",
+        "focusVisible": true,
+        "outline": "rgb(0, 83, 253) solid 2px",
+        "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, color(srgb 0 0 0 / 0.025) 0px 0px 0px 1108px inset",
+        "geometry": {
+          "x": 366.4765625,
+          "y": 0,
+          "width": 137.2578125,
+          "height": 34
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "New session",
+          "selected": true,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "Untitled session",
+          "selected": false,
+          "tabIndex": 0,
+          "focusVisible": true
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-safe-tabs-05",
+      "key": "Space",
+      "caption": "Space: activate draft; no composer focus theft",
+      "settleMs": 1600,
+      "active": {
+        "role": "tab",
+        "name": "Untitled session",
+        "focusVisible": true,
+        "outline": "rgb(0, 83, 253) solid 2px",
+        "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 83, 253) 0px -2px 0px 0px inset",
+        "geometry": {
+          "x": 366.4765625,
+          "y": 0,
+          "width": 137.2578125,
+          "height": 34
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "New session",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "Untitled session",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": true
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-safe-tabs-06",
+      "key": "Delete",
+      "caption": "Delete: close disposable draft; sibling keeps focus",
+      "settleMs": 1600,
+      "active": {
+        "role": "tab",
+        "name": "New session",
+        "focusVisible": true,
+        "outline": "rgb(0, 83, 253) solid 2px",
+        "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 83, 253) 0px -2px 0px 0px inset",
+        "geometry": {
+          "x": 260,
+          "y": 0,
+          "width": 106.4765625,
+          "height": 34
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "New session",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": true
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "head-safe-find",
+      "key": "Meta+f",
+      "caption": "Command+F: open Find on empty draft",
+      "settleMs": 300,
+      "active": {
+        "role": "input",
+        "name": "Find in page",
+        "focusVisible": true,
+        "outline": "rgb(0, 83, 253) solid 2px",
+        "boxShadow": "none",
+        "geometry": {
+          "x": 592,
+          "y": 51,
+          "width": 160,
+          "height": 24
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "Sessions",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        },
+        {
+          "name": "Bots",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "New session",
+          "selected": true,
+          "tabIndex": 0,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "checkpoint": "base-safe-find",
+      "key": "Meta+f",
+      "caption": "Command+F: exact-base Find on empty draft",
+      "settleMs": 300,
+      "active": {
+        "role": "input",
+        "name": "Find in page",
+        "focusVisible": true,
+        "outline": "color(srgb 0.121569 0.137255 0.156863 / 0.94) none 3px",
+        "boxShadow": "none",
+        "geometry": {
+          "x": 592,
+          "y": 51,
+          "width": 160,
+          "height": 24
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "SESSIONS",
+          "selected": true,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "BOTS",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "NEW SESSION",
+          "selected": true,
+          "tabIndex": -1,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "checkpoint": "base-sidebar-title-keyboard",
+      "key": "Tab",
+      "caption": "Tab: focus title with real keyboard event",
+      "settleMs": 300,
+      "active": {
+        "role": "button",
+        "name": "Getting started #2",
+        "focusVisible": true,
+        "outline": "color(srgb 0.121569 0.137255 0.156863 / 0.94) none 3px",
+        "boxShadow": "none",
+        "geometry": {
+          "x": 18,
+          "y": 511.59375,
+          "width": 216,
+          "height": 20
+        }
+      },
+      "visibleTabs": [
+        {
+          "name": "SESSIONS",
+          "selected": true,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "BOTS",
+          "selected": false,
+          "tabIndex": -1,
+          "focusVisible": false
+        },
+        {
+          "name": "NEW SESSION",
+          "selected": true,
+          "tabIndex": -1,
+          "focusVisible": false
+        }
+      ],
+      "timestampTabStops": [
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}
