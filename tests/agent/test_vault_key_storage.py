@@ -345,11 +345,14 @@ def test_a_keychain_that_never_answers_fails_the_open_and_frees_the_vault(home, 
         return answer(service, username)
 
     monkeypatch.setattr(keychain, "get_password", stalling_get)
-    monkeypatch.setattr(vault_keychain, "ANSWER_TIMEOUT_S", 0.2)
+    monkeypatch.setattr(vault_keychain, "ANSWER_TIMEOUT_S", 2.0)
     try:
         with pytest.raises(VaultError) as err:
             VaultStore().list_items()
         assert stalled.is_set()
+        with pytest.raises(VaultError):
+            VaultStore().list_items()  # retries wait on the stalled read instead of stacking threads
+        assert sum(t.name == "hermes-keychain-read" for t in threading.enumerate()) == 1
         assert "did not answer" in str(err.value) and "still saved" in str(err.value)
         assert "delete vault.json.enc" not in str(err.value)
         assert (h / "vault" / "vault.json.enc").read_bytes() == ciphertext

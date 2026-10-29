@@ -41,30 +41,44 @@ class KeychainNoAnswer(KeychainUnavailable):
 # cross-process lock: one stalled read froze every vault user on the machine until killed.
 # Idea from Muse Code 1.4.12 (stop waiting on an unresponsive macOS Keychain, say the login is saved).
 ANSWER_TIMEOUT_S = 30.0
+_stalled_read: Optional[threading.Thread] = None
 
 
-def _ask(call, *args):
-    """Run one keyring call, giving up after ``ANSWER_TIMEOUT_S``. The abandoned call keeps waiting
-    on a daemon thread (keyring offers no cancel); it cannot hold the vault lock or block exit."""
+def _read(backend, service: str, account: str) -> Optional[str]:
+    """``backend.get_password``, given up after ``ANSWER_TIMEOUT_S``. Only READS are bounded: an
+    abandoned write or delete could still land after the vault lock moved on (and delete a key a
+    later migration reuses). The abandoned read keeps waiting on a daemon thread (keyring has no
+    cancel), and at most one is ever outstanding: later reads wait on it instead of piling up."""
+    global _stalled_read
+    if _stalled_read is not None:
+        _stalled_read.join(ANSWER_TIMEOUT_S)
+        if _stalled_read.is_alive():
+            raise _no_answer()
+        _stalled_read = None
     box: dict = {}
 
     def run() -> None:
         try:
-            box["value"] = call(*args)
+            box["value"] = backend.get_password(service, account)
         except BaseException as exc:  # health: allow BLE001 -- re-raised on the caller's thread below
             box["error"] = exc
 
-    worker = threading.Thread(target=run, name="hermes-keychain-call", daemon=True)
+    worker = threading.Thread(target=run, name="hermes-keychain-read", daemon=True)
     worker.start()
     worker.join(ANSWER_TIMEOUT_S)
     if worker.is_alive():
-        raise KeychainNoAnswer(
-            f"the OS keychain did not answer within {ANSWER_TIMEOUT_S:g}s (it may be locked, or waiting on "
-            "an unlock prompt this session cannot show). The vault key is still saved there: unlock the "
-            "keychain and try again")
+        _stalled_read = worker
+        raise _no_answer()
     if "error" in box:
         raise box["error"]
     return box.get("value")
+
+
+def _no_answer() -> KeychainNoAnswer:
+    return KeychainNoAnswer(
+        f"the OS keychain did not answer within {ANSWER_TIMEOUT_S:g}s (it may be locked, or waiting on "
+        "an unlock prompt this session cannot show). The vault key is still saved there: unlock the "
+        "keychain and try again")
 
 
 def _is_os_keychain(backend) -> bool:
@@ -152,7 +166,7 @@ def load_key(ref: dict) -> Optional[bytes]:
     """The stored key, or None when the entry is gone. Raises KeychainUnavailable."""
     backend = os_keyring()
     try:
-        value = _ask(backend.get_password, str(ref.get("service") or SERVICE), str(ref["account"]))
+        value = _read(backend, str(ref.get("service") or SERVICE), str(ref["account"]))
     except KeychainNoAnswer:
         raise
     except Exception as exc:  # health: allow BLE001 -- a locked or dismissed keychain raises backend-specific types
@@ -165,8 +179,8 @@ def store_key(ref: dict, key: bytes) -> None:
     backend = os_keyring()
     service, account = str(ref.get("service") or SERVICE), str(ref["account"])
     try:
-        _ask(backend.set_password, service, account, key.decode("ascii"))
-        readback = _ask(backend.get_password, service, account)
+        backend.set_password(service, account, key.decode("ascii"))
+        readback = _read(backend, service, account)
     except KeychainNoAnswer:
         raise
     except Exception as exc:  # health: allow BLE001 -- every keyring backend raises its own types
@@ -181,8 +195,8 @@ def delete_key(ref: dict) -> bool:
     try:
         backend = os_keyring()
         with suppress(Exception):  # a missing entry raises PasswordDeleteError; the read below decides
-            _ask(backend.delete_password, service, account)
-        return _ask(backend.get_password, service, account) is None
+            backend.delete_password(service, account)
+        return _read(backend, service, account) is None
     except Exception:  # health: allow BLE001 -- unreachable keychain: the caller keeps the pointer to retry
         return False
 
