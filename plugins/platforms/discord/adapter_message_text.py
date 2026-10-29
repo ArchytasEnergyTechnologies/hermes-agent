@@ -9,7 +9,7 @@ read the same on the trigger message, the replied-to message and the backfilled 
 from __future__ import annotations
 
 from contextlib import suppress
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 FORWARD_PREFIX = "[Forwarded] "
 
@@ -91,3 +91,14 @@ async def thread_starter(thread: Any) -> Optional[Any]:
     with suppress(Exception):  # 404 for a standalone thread, 403 without history access
         return await fetch(thread.id)
     return None
+
+
+async def thread_starter_rows(thread: Any, keep: Callable[[Any], Optional[str]], *, is_thread: bool,
+                              warm: bool) -> list[tuple[str, str]]:
+    """Backfill row for the thread starter on a COLD thread scan, formatted by the caller's ``keep``
+    (same bot/trust filters as any history line); none once the bot already spoke in the thread."""
+    if not is_thread or warm:
+        return []
+    starter = await thread_starter(thread)
+    line = keep(starter) if starter is not None else None
+    return [("", f"(thread starter) {line}")] if line else []

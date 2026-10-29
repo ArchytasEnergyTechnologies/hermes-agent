@@ -5281,7 +5281,7 @@ class DiscordAdapter(DiscordAuthorizationMixin, DiscordMediaMixin, DiscordThread
             # ── Primary window: recent channel activity since the last bot turn ──
             collected: list[tuple[str, str]] = []  # (message_id, line)
             seen_ids: set = set()
-            hit_partition = False
+            hit_partition = _after_obj is not None  # a cached window already starts after our last turn
             # oldest_first=False explicitly — discord.py 2.x flips the default to True when `after=`
             # is given, selecting the *earliest* N messages (see test_fetch_channel_context_cache_*).
             async for msg in channel.history(
@@ -5330,13 +5330,9 @@ class DiscordAdapter(DiscordAuthorizationMixin, DiscordMediaMixin, DiscordThread
                     reply_collected.append((mid, line))
                     if mid:
                         seen_ids.add(mid)
-            # Cold thread scan: the starter (in the parent channel) is what the thread is about, under the
-            # same filters as any history line. Newest-first here, so appending puts it on top after the reverse.
-            if is_thread_channel and not hit_partition and _after_obj is None:
-                starter = await _msg_text.thread_starter(channel)
-                starter_line = _keep(starter) if starter is not None else None
-                if starter_line:
-                    collected.append(("", f"(thread starter) {starter_line}"))
+            # Newest-first here, so the thread starter row lands on top after the reverse below.
+            collected.extend(await _msg_text.thread_starter_rows(channel, _keep, is_thread=is_thread_channel,
+                                                                 warm=hit_partition))
             if not collected and not reply_collected:
                 return ""
             # history is newest-first; reverse each window, reply context (older) first.
