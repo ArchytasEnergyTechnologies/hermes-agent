@@ -417,6 +417,35 @@ def test_find_exit2_still_fails_closed():
     assert result.files == []
 
 
+# --- a real error beside thousands of permission skips -----------------------------
+
+
+def _rg_flood(i):
+    return f"rg: /srv/locked{i}: Permission denied (os error 13)\n"
+
+
+def _find_flood(i):
+    return f"find: '/srv/locked{i}': Permission denied\n"
+
+
+@pytest.mark.parametrize("env_cls,target,flood,real_error,code", [
+    (RecordingEnvironment, "files", _rg_flood, "rg: error parsing glob '[': unclosed character class", 2),
+    (RecordingEnvironment, "content", _rg_flood, "rg: /srv/gone: No such file or directory (os error 2)", 2),
+    (GrepOnlyEnvironment, "files", _find_flood, "find: '/srv/gone': No such file or directory", 1),
+])
+def test_error_beside_a_permission_flood_names_the_failure_in_bounded_text(
+        env_cls, target, flood, real_error, code):
+    output = "".join(flood(i) for i in range(5000)) + real_error + "\n"
+    env = env_cls(rg_output=output, rg_code=code)
+
+    result = ShellFileOperations(env).search(
+        "*.py" if target == "files" else "needle", path="/srv", target=target)
+
+    assert result.error is not None
+    assert real_error in result.error
+    assert len(result.error) < 3000
+
+
 # --- live end-to-end (real rg, real filesystem) -----------------------------------
 
 
