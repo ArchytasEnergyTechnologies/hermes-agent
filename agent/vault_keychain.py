@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import uuid
 from contextlib import suppress
 from pathlib import Path
@@ -29,6 +30,41 @@ _NOT_A_KEYCHAIN = ("keyring.backends.fail", "keyring.backends.null", "keyrings.a
 
 class KeychainUnavailable(Exception):
     """No OS keychain is reachable from this process (headless, no keyring extra, plaintext backend)."""
+
+
+class KeychainNoAnswer(KeychainUnavailable):
+    """The keychain exists but did not answer in time; the entry is presumably still there."""
+
+
+# A locked keychain waiting on an unlock or "allow access" dialog this session cannot show (SSH, the
+# gateway service, a Desktop backend) never returns, and every caller holds the vault's
+# cross-process lock: one stalled read froze every vault user on the machine until killed.
+# Idea from Muse Code 1.4.12 (stop waiting on an unresponsive macOS Keychain, say the login is saved).
+ANSWER_TIMEOUT_S = 30.0
+
+
+def _ask(call, *args):
+    """Run one keyring call, giving up after ``ANSWER_TIMEOUT_S``. The abandoned call keeps waiting
+    on a daemon thread (keyring offers no cancel); it cannot hold the vault lock or block exit."""
+    box: dict = {}
+
+    def run() -> None:
+        try:
+            box["value"] = call(*args)
+        except BaseException as exc:  # health: allow BLE001 -- re-raised on the caller's thread below
+            box["error"] = exc
+
+    worker = threading.Thread(target=run, name="hermes-keychain-call", daemon=True)
+    worker.start()
+    worker.join(ANSWER_TIMEOUT_S)
+    if worker.is_alive():
+        raise KeychainNoAnswer(
+            f"the OS keychain did not answer within {ANSWER_TIMEOUT_S:g}s (it may be locked, or waiting on "
+            "an unlock prompt this session cannot show). The vault key is still saved there: unlock the "
+            "keychain and try again")
+    if "error" in box:
+        raise box["error"]
+    return box.get("value")
 
 
 def _is_os_keychain(backend) -> bool:
@@ -116,7 +152,9 @@ def load_key(ref: dict) -> Optional[bytes]:
     """The stored key, or None when the entry is gone. Raises KeychainUnavailable."""
     backend = os_keyring()
     try:
-        value = backend.get_password(str(ref.get("service") or SERVICE), str(ref["account"]))
+        value = _ask(backend.get_password, str(ref.get("service") or SERVICE), str(ref["account"]))
+    except KeychainNoAnswer:
+        raise
     except Exception as exc:  # health: allow BLE001 -- a locked or dismissed keychain raises backend-specific types
         raise KeychainUnavailable(f"the OS keychain did not answer ({type(exc).__name__})") from exc
     return value.encode("ascii") if value else None
@@ -127,8 +165,10 @@ def store_key(ref: dict, key: bytes) -> None:
     backend = os_keyring()
     service, account = str(ref.get("service") or SERVICE), str(ref["account"])
     try:
-        backend.set_password(service, account, key.decode("ascii"))
-        readback = backend.get_password(service, account)
+        _ask(backend.set_password, service, account, key.decode("ascii"))
+        readback = _ask(backend.get_password, service, account)
+    except KeychainNoAnswer:
+        raise
     except Exception as exc:  # health: allow BLE001 -- every keyring backend raises its own types
         raise KeychainUnavailable(f"the OS keychain refused the key ({type(exc).__name__})") from exc
     if readback != key.decode("ascii"):
@@ -141,8 +181,8 @@ def delete_key(ref: dict) -> bool:
     try:
         backend = os_keyring()
         with suppress(Exception):  # a missing entry raises PasswordDeleteError; the read below decides
-            backend.delete_password(service, account)
-        return backend.get_password(service, account) is None
+            _ask(backend.delete_password, service, account)
+        return _ask(backend.get_password, service, account) is None
     except Exception:  # health: allow BLE001 -- unreachable keychain: the caller keeps the pointer to retry
         return False
 
