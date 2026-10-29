@@ -346,6 +346,46 @@ describe('installDesktopPluginFromGit', () => {
     expect(fs.readFileSync(path.join(appRoot, installed.pluginName!, 'panel.js'), 'utf8')).toBe('replaced\n')
   })
 
+  it.each(['..', 'C:..', 'a/b', 'nul .js', 'C:foo', '.hidden', 'gizmo.', 'x'.repeat(129)])(
+    'refuses a package named %s on a forced install and deletes nothing',
+    async name => {
+      // The folder name comes from the package's manifest: `..` would make a forced install replace
+      // the Hermes home that holds desktop-plugins/.
+      const repo = pluginRepo(name)
+      const home = mkdtemp('hermes-home-')
+      roots.push(home)
+      const appRoot = path.join(home, 'desktop-plugins')
+      fs.mkdirSync(appRoot)
+      fs.writeFileSync(path.join(home, 'config.yaml'), 'keep\n')
+
+      const result = await installDesktopPluginFromGit('git', pathToFileURL(repo).href, appRoot, true)
+
+      expect(fs.readFileSync(path.join(home, 'config.yaml'), 'utf8')).toBe('keep\n')
+      expect(result.ok).toBe(false)
+      expect(result.error).toContain('is not a desktop plugin folder name')
+      expect(fs.readdirSync(appRoot)).toEqual([])
+    }
+  )
+
+  it('names the package marker after the folder when a plugin.json name has outer spaces', async () => {
+    // The folder name is trimmed; a marker naming the untrimmed package would not pair with that folder.
+    const repo = pluginRepo(null)
+    fs.writeFileSync(path.join(repo, 'plugin.json'), JSON.stringify({ name: ' spaced ' }))
+    execFileSync('git', ['add', '-A'], { cwd: repo, stdio: 'pipe' })
+    execFileSync('git', ['-c', 'user.email=f@example.com', '-c', 'user.name=F', 'commit', '-qm', 'manifest'], {
+      cwd: repo,
+      stdio: 'pipe'
+    })
+    const appRoot = mkdtemp('hermes-plugin-root-')
+    roots.push(appRoot)
+
+    const result = await installDesktopPluginFromGit('git', pathToFileURL(repo).href, appRoot)
+
+    expect(result).toMatchObject({ ok: true, pluginName: 'spaced' })
+    const marker = JSON.parse(fs.readFileSync(path.join(appRoot, 'spaced', PACKAGE_MARKER), 'utf8'))
+    expect(marker.package).toBe('spaced')
+  })
+
   it('stamps the package marker on a unified package half and names the folder after the agent package', async () => {
     // Without the marker the Plugins page has no evidence that this copy is the
     // agent row's desktop half: the row sits on "copying…" while the copy shows

@@ -16,7 +16,7 @@ const SEGMENT_MAX = 255
 // trailing dot, which Windows drops: `foo.` would share `foo`'s folder).
 const PLUGIN_ID_RE = /^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,126}[A-Za-z0-9_-])?$/
 // Windows device names open the device, not a file, with any extension.
-const WIN_RESERVED_RE = /^(?:con|prn|aux|nul|com[0-9¹²³]|lpt[0-9¹²³]|conin\$|conout\$|clock\$)(?:\.|$)/i
+export const WIN_RESERVED_RE = /^(?:con|prn|aux|nul|com[0-9¹²³]|lpt[0-9¹²³]|conin\$|conout\$|clock\$)(?:\.|$)/i
 // Kernel pseudo-filesystems: their files are "regular" with size 0 and can
 // hold the app's own environment (`/proc/self/environ`).
 const SYSTEM_ROOTS = ['/proc', '/sys', '/dev']
