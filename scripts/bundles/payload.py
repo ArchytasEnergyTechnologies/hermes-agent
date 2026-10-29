@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import shutil
 import subprocess
 import sys
 import tarfile
@@ -47,7 +46,10 @@ def snapshot(repo: Path, ref: str, destination: Path, exclude: tuple[str, ...] =
              "archive", "--format=tar", "--output", str(archive), ref, "--", *pathspecs],
             cwd=repo, check=True)
         if destination.exists():
-            shutil.rmtree(destination)
+            # A rebuilt payload holds baked bytecode chmodded read-only, which
+            # Windows refuses to unlink.
+            from pm.filesystem import remove_tree
+            remove_tree(destination)
         destination.mkdir(parents=True)
         with tarfile.open(archive) as source:
             source.extractall(destination, filter="data")
