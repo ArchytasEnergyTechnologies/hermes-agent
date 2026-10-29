@@ -226,6 +226,24 @@ def test_a_canary_upgrades_from_the_last_published_canary(monkeypatch):
     assert stable._published_baseline(env, BASE, "canary") is None
 
 
+def test_canary_packages_upgrade_in_claim_stamp_order():
+    old, new = canary_candidates(PREVIOUS, digest="1" * 64), canary_candidates()
+    for platform, arch in (("macos", "arm64"), ("windows", "x64")):
+        left, right = (next(row for row in manifest["packages"] if (row["platform"], row["arch"]) == (platform, arch))
+                       for manifest in (old, new))
+        left = {**left, "commit": "c" * 40}
+        target = f"{platform}/{arch}"
+        row = stable._transition_row(target, left, right)
+        assert row["transition"]["old"]["tag"] == PREVIOUS and row["transition"]["new"]["tag"] == CANARY
+        # Consecutive canaries share X.Y.Z; an equal or older stamp is no upgrade.
+        with pytest.raises(ValueError, match="increase"):
+            stable._transition_row(target, left, {**left, "commit": COMMIT, "artifact": {**left["artifact"], "sha256": "3" * 64}})
+        with pytest.raises(ValueError, match="increase"):
+            stable._transition_row(target, {**right, "commit": "c" * 40}, {**left, "commit": COMMIT})
+        with pytest.raises(ValueError, match="identity"):
+            stable._transition_row(target, left, {**right, "identity": "NousResearch.HermesBundled"})
+
+
 def test_canary_candidates_carry_the_canary_package_versions():
     from scripts.releases import channel_releases
 

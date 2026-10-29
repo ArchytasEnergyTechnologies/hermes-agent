@@ -395,7 +395,10 @@ def _transition_row(target: str, left: dict, right: dict) -> dict:
     else:
         if left["teamId"] != right["teamId"]:
             raise ValueError("Update must preserve signing team")
-        newer = tuple(map(int, right["version"].split("."))) > tuple(map(int, left["version"].split(".")))
+        # Consecutive canaries share X.Y.Z (X.Y.Z+canary.<stamp>): their order is the claim stamp.
+        key = (lambda row: stamped_epoch(row["tag"])) if is_canary_claim(right["tag"]) else \
+            (lambda row: tuple(map(int, row["version"].split("."))))
+        newer = key(right) > key(left)
     if not newer:
         raise ValueError("New package version must increase")
     return {"target": target.replace("/", "-"), "transition": {
