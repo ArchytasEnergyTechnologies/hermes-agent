@@ -583,7 +583,7 @@ describe('CapabilitiesView toolset management', { timeout: 60_000 }, () => {
       ['agent-git-oracle', 'pdf'].map(name => ({ name, description: name, enabled: true, usage: 0, provenance: 'hub' }))
     )
     queryClient.setQueryData(
-      ['public-catalog', 'skills'],
+      ['public-catalog', catalogFeed('skills')],
       parseCatalog('skills', [
         { name: 'Agent Git Oracle', source: 'ClawHub', identifier: 'agent-git-oracle' },
         { name: 'My Pdf', source: 'ClawHub', identifier: 'my-pdf' }
