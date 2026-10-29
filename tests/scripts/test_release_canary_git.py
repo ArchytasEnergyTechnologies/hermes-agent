@@ -135,7 +135,7 @@ def test_incomplete_canary_redispatches_the_existing_receipt(canary_repo, monkey
 
 
 def test_the_claim_records_the_chosen_lanes_and_green_policy(canary_repo):
-    git, remote, calls = canary_repo
+    git, remote, _calls = canary_repo
     git("commit", "--allow-empty", "-qm", "stable")
     git("tag", "v1.2.3")
     git("commit", "--allow-empty", "-qm", "feat: next")
