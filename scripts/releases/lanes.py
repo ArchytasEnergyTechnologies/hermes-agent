@@ -109,6 +109,9 @@ JOB_LANES: dict[str, frozenset[str]] = {name: frozenset(needs) for name, needs i
 }.items()}
 
 CANDIDATE_CALLS = tuple(job for job in JOB_LANES if job.startswith("candidates-"))
+# The signed-package upgrade arms. Whatever its green policy, a canary publishes only if every arm
+# that ran passed (stable-release.yml publish-canary, channel_releases custody).
+UPGRADE_ARMS = tuple(job for job, needs in JOB_LANES.items() if "upgrade" in needs)
 
 # The release policies stable-release.yml runs. Every build and test job is shared; only these
 # publication jobs belong to some policies, and each runs only under those. A stable release

@@ -183,11 +183,11 @@ def docker_tag(claim_tag: str) -> str:
     return claim_tag
 
 
-def require_success(needs: dict, required: list[str]) -> None:
+def require_success(needs: dict, required: list[str], allowed: tuple[str, ...] = ("success",)) -> None:
     if not required or len(set(required)) != len(required):
         raise ValueError("Invalid required-job list")
     failures = [f"{name}={needs.get(name, {}).get('result', 'missing')}"
-                for name in required if needs.get(name, {}).get("result") != "success"]
+                for name in required if needs.get(name, {}).get("result") not in allowed]
     if failures:
         raise ValueError("Release blocked: " + ", ".join(failures))
 

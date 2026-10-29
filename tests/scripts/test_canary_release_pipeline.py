@@ -384,11 +384,21 @@ def test_the_canary_controller_custody_is_the_stable_pipeline_after_its_accepted
     from scripts.releases import channel_releases
 
     needs = {"admit": {"result": "success"}, "candidate-manifest": {"result": "success"},
-             "acceptance": {"result": "failure"}}
+             "acceptance": {"result": "failure"}, **{arm: {"result": "success"} for arm in lane_set.UPGRADE_ARMS}}
     # Without require-green, a red suite never blocks the canary's publication.
     env = {**CONTROLLER_ENV, "RELEASE_TAG": CANARY, "RELEASE_TAG_OBJECT": TAG_OBJECT, "REQUIRE_GREEN": "false",
            "RELEASE_COMMIT": COMMIT, "RELEASE_NEEDS": json.dumps(needs), "GITHUB_ACTIONS": "true"}
     assert channel_releases.admit_transaction("canary-release", env, run=_custody_run()) == (CANARY, COMMIT)
+    # An upgrade arm that ran must pass even then; one skipped (no baseline, lane off) does not block.
+    skipped = {**needs, **{arm: {"result": "skipped"} for arm in stable.PACKAGED_BY}}
+    assert channel_releases.admit_transaction("canary-release", {**env, "RELEASE_NEEDS": json.dumps(skipped)},
+                                              run=_custody_run()) == (CANARY, COMMIT)
+    for result in ("failure", "cancelled", "missing"):
+        red = {**needs, "windows-packaged": {"result": result}} if result != "missing" else \
+            {name: row for name, row in needs.items() if name != "windows-packaged"}
+        with pytest.raises(ValueError, match=f"windows-packaged={result}"):
+            channel_releases.admit_transaction("canary-release", {**env, "RELEASE_NEEDS": json.dumps(red)},
+                                               run=_custody_run())
     # With it (or without the flag at all: custody fails closed), acceptance must have passed.
     for green in ({"REQUIRE_GREEN": "true"}, {"REQUIRE_GREEN": ""}):
         with pytest.raises(ValueError, match="acceptance=failure"):
