@@ -191,6 +191,41 @@ def canary_candidates(tag=CANARY, *, digest="2" * 64):
             "smoke_results": {job: {"result": "success"} for job in stable.SMOKE_JOBS}}
 
 
+PREVIOUS = "canary.20261020T064100Z-v1.2.3"
+
+
+def test_a_canary_upgrades_from_the_last_published_canary(monkeypatch):
+    import urllib.error
+
+    previous = canary_candidates(PREVIOUS)
+    read = []
+    monkeypatch.setattr(stable, "read_manifest", lambda url, **_: read.append(url) or previous)
+    release = {"tagName": PREVIOUS, "isDraft": False, "isPrerelease": True}
+    monkeypatch.setattr(stable, "output", lambda _argv: json.dumps(release))
+    env = {"GITHUB_REPOSITORY": "example/hermes-agent"}
+    assert stable._published_baseline(env, BASE, "canary") == previous
+    assert read == [f"{BASE}/releases/canary/release-candidates.json"]
+    # A draft canary, a canary that is not a prerelease, and a stable baseline are refused.
+    for bad in ({"isDraft": True}, {"isPrerelease": False}):
+        release.update(bad)
+        with pytest.raises(ValueError, match="published canary release"):
+            stable._published_baseline(env, BASE, "canary")
+        release.update(isDraft=False, isPrerelease=True)
+    with pytest.raises(ValueError, match="published stable release"):
+        stable._published_baseline(env, BASE, "stable")
+    previous["tag"] = release["tagName"] = "v1.2.2"
+    release["isPrerelease"] = False
+    with pytest.raises(ValueError, match="published canary release"):
+        stable._published_baseline(env, BASE, "canary")
+    assert stable._published_baseline(env, BASE, "stable") == previous
+
+    # No canary pointer yet: no baseline, so no upgrade arm.
+    def missing(url, **_):
+        raise urllib.error.HTTPError(url, 404, "Not Found", {}, None)
+    monkeypatch.setattr(stable, "read_manifest", missing)
+    assert stable._published_baseline(env, BASE, "canary") is None
+
+
 def test_canary_candidates_carry_the_canary_package_versions():
     from scripts.releases import channel_releases
 
