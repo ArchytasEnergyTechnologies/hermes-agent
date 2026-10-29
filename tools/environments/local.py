@@ -1110,10 +1110,16 @@ class LocalEnvironment(BaseEnvironment):
         # custom init files so nvm/asdf/pyenv land on PATH in the snapshot.
         if login:
             cmd_string = _prepend_shell_init(cmd_string, _resolve_shell_init_files())
-        args = [bash, *(["-l"] if login else []), "-c", cmd_string]
+        run_env = _make_run_env(self.env)
+        if _IS_WINDOWS:  # Git Bash has no pkill/pgrep -f; keep the command on argv there
+            args = [bash, *(["-l"] if login else []), "-c", cmd_string]
+        else:
+            from tools.environments.remote_common import COMMAND_ENV_VAR, bash_env_argv
+            args = [bash, *bash_env_argv(login)[1:]]
+            run_env[COMMAND_ENV_VAR] = cmd_string
         self._recover_cwd()
         proc = subprocess.Popen(
-            args, text=True, env=_make_run_env(self.env), encoding="utf-8", errors="replace",
+            args, text=True, env=run_env, encoding="utf-8", errors="replace",
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             stdin=subprocess.PIPE if stdin_data is not None else subprocess.DEVNULL,
             start_new_session=True, cwd=self.cwd,
