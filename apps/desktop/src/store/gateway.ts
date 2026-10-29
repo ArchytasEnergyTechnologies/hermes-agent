@@ -32,6 +32,7 @@ import {
 } from '@/lib/with-timeout'
 import { $gatewayActivationEpoch } from '@/store/gateway-activation-epoch'
 import { isMissingConnectionError, isMissingProfileError } from '@/store/gateway-dial-failures'
+import { $primaryGatewayRoute } from '@/store/gateway-primary-route'
 import { notifyError, RECOVERY_ACTIONS } from '@/store/notifications'
 import { markNativeNotifyBaseline } from '@/store/notify-baseline'
 import { setConnection, setGatewayState } from '@/store/session'
@@ -218,10 +219,6 @@ interface GatewayRegistryState {
   primaryGateway: HermesGateway | null
   /** Registry source currently served by primaryGateway, when known. */
   primaryConnectionId: null | string
-  /** Resolved mode of the primary's descriptor: a `local` primary is ONE
-   *  `hermes serve --profile <primary>` child and can never stand in for a
-   *  pooled profile's own backend. */
-  primaryConnectionMode: 'local' | 'remote' | null
   primaryProfile: string
   activeKey: string
   secondaries: Map<string, Secondary>
@@ -249,7 +246,6 @@ function createRegistryState(): GatewayRegistryState {
     config: null,
     primaryGateway: null,
     primaryConnectionId: null,
-    primaryConnectionMode: null,
     primaryProfile: initialGatewayProfile(),
     activeKey: initialGatewayProfile(),
     secondaries: new Map<string, Secondary>(),
@@ -371,7 +367,7 @@ export function setPrimaryGateway(gateway: HermesGateway | null, profile = 'defa
 
   if (g.primaryGateway !== gateway) {
     g.primaryConnectionId = null
-    g.primaryConnectionMode = null
+    $primaryGatewayRoute.set({ connectionId: null, mode: null })
   }
 
   // Route identity is exact-scope, never bare-name (#93892 follow-up): when
@@ -404,7 +400,8 @@ export function setPrimaryGatewayConnectionId(
   // scope is the AMBIENT request connection (#95628), which moves only while
   // the primary is in front.
   g.primaryConnectionId = (connectionId ?? '').trim() || null
-  g.primaryConnectionMode = mode === 'local' || mode === 'remote' ? mode : null
+  const primaryMode = mode === 'local' || mode === 'remote' ? mode : null
+  $primaryGatewayRoute.set({ connectionId: g.primaryConnectionId, mode: primaryMode })
 
   if (g.activeKey === g.primaryProfile) {
     setApiRequestConnection(g.primaryConnectionId)
@@ -420,8 +417,10 @@ export function dialedGatewayModeFor(connectionId: null | string, profile: strin
   const id = String(connectionId ?? '').trim() || null
   const key = normKey(profile)
 
-  if (key === g.primaryProfile && (!id || id === g.primaryConnectionId) && g.primaryConnectionMode) {
-    return g.primaryConnectionMode
+  const primaryMode = $primaryGatewayRoute.get().mode
+
+  if (key === g.primaryProfile && (!id || id === g.primaryConnectionId) && primaryMode) {
+    return primaryMode
   }
 
   const mode = g.secondaries.get(registryBackendScopeKey(id, key))?.connection?.mode
@@ -503,7 +502,7 @@ async function ridesPrimaryBackend(connectionId: null | string, profile: string)
     // its own pid, but the exact-owner route names the pool backend — after a
     // renderer reload or a pool respawn the resume dials that backend and is
     // refused SESSION_NOT_OWNED by a pid of the same Desktop (#101416).
-    return g.primaryConnectionMode !== 'local'
+    return $primaryGatewayRoute.get().mode !== 'local'
   }
 }
 
