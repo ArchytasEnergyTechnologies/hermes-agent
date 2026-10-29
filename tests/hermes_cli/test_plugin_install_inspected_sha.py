@@ -91,6 +91,24 @@ def test_a_clone_failure_echoing_the_refusal_text_carries_no_marker(moved_repo, 
     assert refused["code"] == 5026 and "data" not in refused
 
 
+def test_a_refused_enable_names_the_tree_that_landed(moved_repo, monkeypatch):
+    """The install placed the tree, then its enable was refused: the client must know the agent half is
+    on disk, so the matching desktop half still goes down beside it."""
+    from hermes_cli import plugins_cmd
+    from hermes_cli.plugins_admission import AdmissionRefused
+    home, _reviewed, tip, _repo = moved_repo
+
+    def refuse(*_args, **_kwargs):
+        raise AdmissionRefused("dependency conflict")
+    monkeypatch.setattr(plugins_cmd, "_set_plugin_enabled", refuse)
+
+    refused = _install(inspected_sha=tip, enable=True)["error"]
+
+    assert refused["code"] == 5026 and "enable refused" in refused["message"]
+    assert refused["data"] == {"plugin_name": "demo"}
+    assert (home / "plugins" / "demo").is_dir()
+
+
 def test_reopening_the_dialog_after_a_refusal_reads_the_moved_source_again(moved_repo):
     _home, reviewed, tip, repo = moved_repo
     inspect = {"id": "1", "method": "plugins.manage",

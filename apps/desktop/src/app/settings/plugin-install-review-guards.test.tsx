@@ -204,6 +204,80 @@ describe('native Desktop on a remote backend: the desktop half cannot follow the
   })
 })
 
+describe('native Desktop on a remote backend: a refused agent half stops its desktop half', () => {
+  const nativeRemote = (refusal: JsonRpcGatewayError) => {
+    requestGateway.mockImplementation(async (method, params) => {
+      if (method === 'plugins.manage' && params?.action === 'install') {
+        throw refusal
+      }
+
+      return { plugins: [] }
+    })
+
+    const probePluginRepo = vi.fn(async () => ({
+      ok: true,
+      agent: true,
+      agentName: 'pkg',
+      desktop: true,
+      desktopName: 'pkg',
+      sha: V1,
+      warnings: []
+    }))
+
+    const installDesktopPlugin = vi.fn(async (_payload: { force?: boolean; sha?: string }) => ({
+      ok: true,
+      pluginName: 'pkg'
+    }))
+
+    vi.stubGlobal('hermesDesktop', { installDesktopPlugin, probePluginRepo })
+
+    return installDesktopPlugin
+  }
+
+  const forceInstall = async () => {
+    renderModal()
+    act(() => openPluginInstallRequest({ repo: REPO }))
+    await waitFor(() => expect(installButton()?.disabled).toBe(false))
+    fireEvent.click(screen.getByRole('switch'))
+    fireEvent.click(installButton()!)
+  }
+
+  it('a forced replacement the backend refuses replaces no desktop half', async () => {
+    const installDesktopPlugin = nativeRemote(
+      new JsonRpcGatewayError('install refused: consent required for the replacement', { code: 5026 })
+    )
+
+    await forceInstall()
+
+    expect(await screen.findByText(/consent required for the replacement/)).toBeTruthy()
+    expect(callsFor('install')).toHaveLength(1)
+    expect(installDesktopPlugin).not.toHaveBeenCalled()
+  })
+
+  it('an agent half that landed but could not be enabled still gets its desktop half', async () => {
+    // The structured data alone names the landed tree, whatever the message says.
+    const installDesktopPlugin = nativeRemote(
+      new JsonRpcGatewayError('dependency conflict', { code: 5026, data: { plugin_name: 'pkg' } })
+    )
+
+    await forceInstall()
+
+    expect(await screen.findByText(/dependency conflict/)).toBeTruthy()
+    expect(installDesktopPlugin.mock.calls.map(([payload]) => [payload.sha, payload.force])).toEqual([[V1, true]])
+  })
+
+  it('an older backend that names no landed tree still gets the desktop half after an enable refusal', async () => {
+    const installDesktopPlugin = nativeRemote(
+      new JsonRpcGatewayError('enable refused: dependency conflict', { code: 5026 })
+    )
+
+    await forceInstall()
+
+    expect(await screen.findByText(/dependency conflict/)).toBeTruthy()
+    expect(installDesktopPlugin.mock.calls.map(([payload]) => [payload.sha, payload.force])).toEqual([[V1, true]])
+  })
+})
+
 describe('a catalog pick is held to the pin the dialog showed', () => {
   const catalogBackend = (refuseUnless?: () => string) =>
     requestGateway.mockImplementation(async (method, params) => {

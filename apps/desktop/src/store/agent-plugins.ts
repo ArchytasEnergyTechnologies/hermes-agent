@@ -258,6 +258,8 @@ export interface AgentPluginInstallResult {
    *  there cannot be held to the reviewed commit. Only the user may choose to install without it. */
   inspectedShaUnsupported?: boolean
   pluginName?: string
+  /** Refused, but its tree landed anyway: only its enable was refused. */
+  landed?: boolean
   warnings?: string[]
   missingEnv?: string[]
   /** Whether the install turned the plugin on (`enabled` in the backend result). */
@@ -333,6 +335,17 @@ export function isSourceMovedRefusal(error: unknown): boolean {
   return data?.reason === 'source_moved'
 }
 
+/** The plugin whose tree landed although its install was refused (its enable was), from the same error data. */
+function landedPluginName(error: unknown): string | undefined {
+  const data = error instanceof JsonRpcGatewayError ? (error.data as { plugin_name?: unknown } | undefined) : undefined
+
+  return typeof data?.plugin_name === 'string' ? data.plugin_name : undefined
+}
+
+/** The backend's own prefix for a refusal after the tree landed (`hermes_cli/plugins_cmd_install.py`). Backends
+ *  older than `data.plugin_name` send only this, so it alone also means the tree landed. */
+const ENABLE_REFUSAL = /^enable refused: /
+
 export async function installAgentPlugin(
   request: GatewayRequest,
   opts: {
@@ -395,6 +408,7 @@ export async function installAgentPlugin(
       timedOut: /^request timed out after \d+s: plugins\.manage$/.test(message),
       sourceMoved: isSourceMovedRefusal(e),
       inspectedShaUnsupported: backendPredatesInspectedSha(params, e),
+      landed: Boolean(landedPluginName(e)) || ENABLE_REFUSAL.test(message),
       error: message,
       live: NO_LIVE,
       nextChat: false

@@ -284,10 +284,12 @@ async function installDesktopHalf(
 /** An agent-half answer after which nothing else may install. A client timeout is `uncertain`: the backend
  *  may still be installing. A refusal because the source moved means nothing from that review installs, not
  *  the other half either. An older backend refusing the reviewed commit at admission installed nothing:
- *  the user decides. */
+ *  the user decides. A forced replacement refused before its tree landed stops a desktop half cloned on its
+ *  own: forcing that one in would replace it at a commit the agent half is not at. */
 function agentStopsInstall(
   result: AgentPluginInstallResult,
   plan: InstallPlan,
+  components: InstallComponents,
   deps: InstallDeps,
   report: Report
 ): InstallOutcome | null {
@@ -301,7 +303,15 @@ function agentStopsInstall(
     return { status: 'stale', error: report.errors.join(' ') }
   }
 
-  return result.inspectedShaUnsupported ? { status: 'needsConfirm' } : null
+  if (result.inspectedShaUnsupported) {
+    return { status: 'needsConfirm' }
+  }
+
+  const clonesDesktopHalf = components.desktop && !desktopHalfFromPackage(components, plan.remote)
+
+  return plan.force && !result.ok && !result.landed && clonesDesktopHalf
+    ? { status: 'failed', error: report.errors.join(' ') }
+    : null
 }
 
 /** The outcome of an install that reported errors. The agent half in at the reviewed commit while the desktop
@@ -328,7 +338,7 @@ export async function runPluginInstall(plan: InstallPlan, deps: InstallDeps): Pr
 
   const report: Report = { errors: [], successes: [], sourceMoved: false }
   const agentResult = components.agent ? await installAgentHalf(plan, deps, report) : undefined
-  const stopped = agentResult && agentStopsInstall(agentResult, plan, deps, report)
+  const stopped = agentResult && agentStopsInstall(agentResult, plan, components, deps, report)
 
   if (stopped) {
     return stopped
