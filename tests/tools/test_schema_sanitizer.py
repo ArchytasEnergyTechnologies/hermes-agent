@@ -645,6 +645,11 @@ def test_draft07_tuple_items_become_prefix_items():
                              "items": {"type": "string"}}
     assert "items" not in props["empty"] and "prefixItems" not in props["empty"]
     assert props["tagged"]["prefixItems"] == [{"type": "string"}] and "items" not in props["tagged"]
+    # Gemini's legacy ``parameters`` subset has no prefixItems: positions must not inherit only
+    # the trailing rule.
+    from agent.gemini_schema import sanitize_gemini_tool_parameters
+    legacy = sanitize_gemini_tool_parameters({"type": "object", "properties": {"size": props["size"]}})
+    assert legacy["properties"]["size"]["items"] == {"anyOf": [{"type": "integer"}, {"type": "string"}]}
 
 
 def test_tuple_conversion_leaves_literal_data_alone():
