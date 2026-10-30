@@ -145,7 +145,9 @@ def _sanitize_single_tool(tool: dict) -> dict:
         fn["parameters"] = _empty_object()
         return out
     name = fn.get("name", "<tool>")
-    top = _sanitize_node(params, path=name)
+    # Draft-07 tuple ``items: [...]`` 400s the whole request on Anthropic (direct or via an
+    # aggregator) and Moonshot; every backend probed accepts the 2020-12 ``prefixItems`` spelling.
+    top = _sanitize_node(convert_tuple_items_to_prefix_items(params), path=name)
     top = top if isinstance(top, dict) else {}  # guarantee an object with properties on top
     top["type"] = "object"
     if not isinstance(top.get("properties"), dict):
@@ -311,11 +313,11 @@ _SUBSCHEMA_MAP_KEYS = frozenset({
 def convert_tuple_items_to_prefix_items(schema: Any) -> Any:
     """Convert draft-07 tuple-form array schemas to draft 2020-12 ``prefixItems``.
 
-    Anthropic's tool-schema validator enforces JSON Schema draft 2020-12 and
-    rejects the draft-07 positional form ``items: [schemaA, schemaB]`` with
-    ``input_schema: JSON schema is invalid. It must match JSON Schema draft
-    2020-12``, while accepting the equivalent ``prefixItems`` spelling (both
-    behaviors verified against the live API). At every node this performs the
+    Anthropic's tool-schema validator (direct, or behind OpenRouter) and Moonshot's both reject
+    the draft-07 positional form ``items: [schemaA, schemaB]`` (Anthropic: ``input_schema: JSON
+    schema is invalid. It must match JSON Schema draft 2020-12``; Moonshot: ``items must be an
+    object``) while accepting the equivalent ``prefixItems`` spelling, as do OpenAI and Gemini
+    (all verified against the live APIs). At every node this performs the
     exact keyword translation defined by the 2020-12 spec:
 
       * list-valued ``items`` -> ``prefixItems`` (same sub-schemas, same order)
